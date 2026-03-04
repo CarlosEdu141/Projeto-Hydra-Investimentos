@@ -1,98 +1,108 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import "./login.css";
 
-export default function Login() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [erro, setErro] = useState(null);
-  const [status, setStatus] = useState("default"); 
-  // default | success | error
+export default function Auth() {
+  const [mode, setMode] = useState("login"); // login | register
+  const [form, setForm] = useState({
+    nome: "",
+    email: "",
+    password: "",
+    confirmPassword: ""
+  });
 
-  const handleLogin = async (e) => {
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setErro(null);
-    setStatus("default");
 
-    try {
-      const response = await fetch("http://localhost:3333/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password })
-      });
-
-      if (!response.ok) {
-        setStatus("error");
-        throw new Error("Credenciais inválidas");
+    if (mode === "login") {
+      console.log("Fazendo login:", form.email, form.password);
+      // chamada para /login
+    } else {
+      if (form.password !== form.confirmPassword) {
+        alert("Senhas não coincidem");
+        return;
       }
 
-      const data = await response.json();
-
-      console.log("Login sucesso:", data);
-
-      setStatus("success");
-
-      // opcional: limpar campos
-      // setEmail("");
-      // setPassword("");
-
-    } catch (err) {
-      setErro("Email ou senha inválidos");
-      setStatus("error");
+      console.log("Cadastrando:", form);
+      // chamada para /usuarios
     }
   };
 
   return (
     <div className="login-container">
       <div className="login-card">
-        <h2 className="logo-text">Arquiteto Financeiro</h2>
 
-        <form onSubmit={handleLogin}>
+        {/* TABS */}
+        <div className="auth-tabs">
+          <button
+            className={mode === "login" ? "active" : ""}
+            onClick={() => setMode("login")}
+          >
+            Login
+          </button>
+
+          <button
+            className={mode === "register" ? "active" : ""}
+            onClick={() => setMode("register")}
+          >
+            Cadastro
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+
+          {mode === "register" && (
+            <input
+              type="text"
+              name="nome"
+              placeholder="Nome completo"
+              value={form.nome}
+              onChange={handleChange}
+              required
+            />
+          )}
+
           <input
             type="email"
-            className="login-input"
+            name="email"
             placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={form.email}
+            onChange={handleChange}
             required
           />
 
           <input
             type="password"
-            className="login-input"
+            name="password"
             placeholder="Senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={form.password}
+            onChange={handleChange}
             required
           />
 
-          {erro && <div className="login-error">{erro}</div>}
+          {mode === "register" && (
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="Confirmar senha"
+              value={form.confirmPassword}
+              onChange={handleChange}
+              required
+            />
+          )}
 
-          <div className="login-actions">
-            <button
-              type="button"
-              className="register-button"
-            >
-              Criar uma conta
-            </button>
+          <button type="submit" className="submit-button">
+            {mode === "login" ? "Entrar" : "Cadastrar"}
+          </button>
 
-            <button
-              type="submit"
-              className={`login-button ${
-                status === "success"
-                  ? "login-success"
-                  : status === "error"
-                  ? "login-failed"
-                  : ""
-              }`}
-            >
-              LOGIN
-            </button>
-          </div>
         </form>
+
       </div>
     </div>
   );
