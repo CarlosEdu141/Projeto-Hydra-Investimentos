@@ -1,18 +1,57 @@
 const usuarioModel = require('../models/usuario.model');
+const db = require('../config/database');
+const bcrypt = require('bcrypt');
 
 // Criar
 async function criar(req, res) {
   try {
-    const { id_pessoa, password } = req.body;
 
-    if (!id_pessoa || !password) {
-      return res.status(400).json({ mensagem: "id_pessoa e password são obrigatórios" });
+    const { nome, cpf, email, data_nascimento, password } = req.body;
+
+    if (!nome || !cpf || !email || !data_nascimento || !password) {
+      return res.status(400).json({
+        mensagem: "Todos os campos são obrigatórios"
+      });
     }
 
-    const resultado = await usuarioModel.criar(req.body);
-    res.status(201).json(resultado.rows[0]);
+    // Verifica se CPF já existe
+    const cpfExiste = await db.query(
+      "SELECT id_pessoa FROM pessoa WHERE cpf = $1",
+      [cpf]
+    );
+
+    if (cpfExiste.rows.length > 0) {
+      return res.status(400).json({
+        mensagem: "CPF já cadastrado"
+      });
+    }
+
+    // cria pessoa
+    const pessoa = await db.query(
+      `INSERT INTO pessoa (nome, cpf, email, data_nascimento)
+       VALUES ($1,$2,$3,$4)
+       RETURNING id_pessoa`,
+      [nome, cpf, email, data_nascimento]
+    );
+
+    const id_pessoa = pessoa.rows[0].id_pessoa;
+
+    // criptografa senha
+    const senhaHash = await bcrypt.hash(password, 10);
+
+    // cria usuario
+    const usuario = await usuarioModel.criar({
+      id_pessoa,
+      password: senhaHash
+    });
+
+    res.status(201).json({
+      mensagem: "Usuário criado com sucesso",
+      usuario: usuario.rows[0]
+    });
 
   } catch (erro) {
+    console.error(erro);
     res.status(500).json({ erro: erro.message });
   }
 }
@@ -84,10 +123,69 @@ async function remover(req, res) {
   }
 }
 
+async function login(req, res) {
+
+  try {
+
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        mensagem: "Email e senha são obrigatórios"
+      });
+    }
+
+    const resultado = await db.query(`
+      SELECT 
+        u.id_user,
+        u.password,
+        p.nome,
+        p.email
+      FROM usuario u
+      JOIN pessoa p ON p.id_pessoa = u.id_pessoa
+      WHERE p.email = $1
+    `, [email]);
+
+    if (resultado.rows.length === 0) {
+      return res.status(401).json({
+        mensagem: "Usuário não encontrado"
+      });
+    }
+
+    const usuario = resultado.rows[0];
+
+    const senhaCorreta = await bcrypt.compare(password, usuario.password);
+
+    if (!senhaCorreta) {
+      return res.status(401).json({
+        mensagem: "Senha incorreta"
+      })
+    }
+
+    res.json({
+      mensagem: "Login realizado com sucesso",
+      usuario: {
+        id: usuario.id_user,
+        nome: usuario.nome,
+        email: usuario.email
+      }
+    });
+
+  } catch (erro) {
+
+    res.status(500).json({
+      erro: erro.message
+    });
+
+  }
+
+}
+
 module.exports = {
   criar,
   listar,
   buscarPorId,
   atualizar,
-  remover
+  remover,
+  login
 };

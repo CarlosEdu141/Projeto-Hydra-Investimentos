@@ -3,6 +3,10 @@ const router = express.Router();
 const usuarioController = require('../controllers/usuario.controller');
 
 router.post('/', usuarioController.criar);
+
+// NOVA ROTA LOGIN
+router.post('/login', usuarioController.login);
+
 router.get('/', usuarioController.listar);
 router.get('/:id', usuarioController.buscarPorId);
 router.put('/:id', usuarioController.atualizar);
