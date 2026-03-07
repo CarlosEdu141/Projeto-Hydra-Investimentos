@@ -1,7 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./login.css";
 
 export default function Auth() {
+
+  const navigate = useNavigate();
 
   const [mode, setMode] = useState("login");
 
@@ -78,10 +81,13 @@ export default function Auth() {
 
         setLoginStatus("success");
 
-        alert("Login realizado com sucesso!");
         console.log("Usuário logado:", data.usuario);
 
-        setTimeout(() => setLoginStatus("idle"), 2000);
+        setTimeout(() => {
+          
+          navigate("/home");
+
+        }, 1000);
 
       } catch (erro) {
 
