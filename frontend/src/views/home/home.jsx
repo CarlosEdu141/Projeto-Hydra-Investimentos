@@ -417,23 +417,6 @@ export default function Home() {
   return (
     <div className="home-page">
 
-      {/* ── Header com nome do usuário e logout ── */}
-      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "20px", gap: "12px" }}>
-        <span style={{ fontSize: "13px", color: "#888" }}>Olá, <strong style={{ color: "#fff" }}>{nomeUsuario}</strong></span>
-        <button
-          onClick={handleLogout}
-          style={{
-            background: "none", border: "1px solid #444", color: "#888",
-            borderRadius: "8px", padding: "5px 14px", fontSize: "12px",
-            cursor: "pointer", transition: "all 0.2s ease",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#ff4d4d"; e.currentTarget.style.color = "#ff4d4d"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#444"; e.currentTarget.style.color = "#888"; }}
-        >
-          Sair
-        </button>
-      </div>
-
       {apiError && <div className="api-error-banner"><span>⚠️</span> {apiError}</div>}
 
       {/* ── KPI Cards ── */}

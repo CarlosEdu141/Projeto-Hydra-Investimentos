@@ -1,0 +1,79 @@
+/* =========================================
+   INVESTIMENTOS
+========================================= */
+.invest-page {
+  width: 100%;
+  min-height: calc(100vh - 60px);
+  background: linear-gradient(135deg, #000000, #0C0C0C);
+  font-family: Arial, Helvetica, sans-serif;
+  color: #ffffff;
+  padding: 32px;
+}
+
+.invest-header {
+  margin-bottom: 40px;
+}
+
+.invest-title {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.invest-subtitle {
+  font-size: 12px;
+  color: #666;
+  letter-spacing: 1px;
+}
+
+/* ── Em breve ── */
+.invest-coming {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 80px 32px;
+  background: #262626;
+  border: 1px solid #2a2a2a;
+  border-radius: 20px;
+  text-align: center;
+}
+
+.invest-coming__icon {
+  font-size: 48px;
+  color: #A2FF01;
+  opacity: 0.4;
+  line-height: 1;
+}
+
+.invest-coming__title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.invest-coming__text {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.7;
+  max-width: 400px;
+}
+
+.invest-coming__tags {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.invest-coming__tags span {
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #A2FF0133;
+  color: #A2FF01;
+  background: #A2FF0110;
+  letter-spacing: 0.5px;
+}

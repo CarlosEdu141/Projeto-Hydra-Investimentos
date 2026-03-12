@@ -1,0 +1,117 @@
+/* =========================================
+   NAVBAR
+========================================= */
+.navbar {
+  width: 100%;
+  height: 60px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Logo ── */
+.navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.navbar__brand-icon {
+  font-size: 22px;
+  color: #A2FF01;
+  line-height: 1;
+}
+
+.navbar__brand-name {
+  font-size: 14px;
+  color: #888;
+  letter-spacing: 0.5px;
+}
+
+.navbar__brand-name strong {
+  color: #ffffff;
+  font-weight: bold;
+}
+
+/* ── Links ── */
+.navbar__links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.navbar__link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #888;
+  text-decoration: none;
+  transition: color 0.2s ease, background 0.2s ease;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.navbar__link:hover {
+  color: #ffffff;
+  background: #2a2a2a;
+}
+
+.navbar__link--active {
+  color: #A2FF01;
+  background: #A2FF0112;
+}
+
+.navbar__link--active:hover {
+  color: #A2FF01;
+  background: #A2FF0120;
+}
+
+.navbar__link-icon {
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+/* ── Usuário ── */
+.navbar__user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.navbar__user-name {
+  font-size: 13px;
+  color: #888;
+}
+
+.navbar__user-name strong {
+  color: #ffffff;
+}
+
+.navbar__logout {
+  background: none;
+  border: 1px solid #444;
+  color: #888;
+  border-radius: 8px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}

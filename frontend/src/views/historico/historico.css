@@ -1,0 +1,172 @@
+/* =========================================
+   HISTÓRICO
+========================================= */
+.historico-page {
+  width: 100%;
+  min-height: calc(100vh - 60px);
+  background: linear-gradient(135deg, #000000, #0C0C0C);
+  font-family: Arial, Helvetica, sans-serif;
+  color: #ffffff;
+  padding: 32px;
+}
+
+.historico-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.historico-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.historico-subtitle {
+  font-size: 12px;
+  color: #666;
+  letter-spacing: 1px;
+}
+
+.historico-count {
+  font-size: 12px;
+  color: #555;
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 20px;
+  padding: 4px 14px;
+}
+
+/* ── Filtros ── */
+.historico-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.filter-tab {
+  background: none;
+  border: 1px solid #2a2a2a;
+  color: #666;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-tab:hover {
+  border-color: #444;
+  color: #aaa;
+}
+
+.filter-tab--active {
+  color: #A2FF01;
+  border-color: #A2FF01;
+  background: #A2FF0112;
+}
+
+.filter-search {
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #ccc;
+  outline: none;
+  width: 280px;
+  transition: border-color 0.2s ease;
+}
+
+.filter-search::placeholder { color: #444; }
+.filter-search:focus { border-color: #A2FF0155; }
+
+/* ── Tabela ── */
+.historico-table-wrap {
+  background: #262626;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.historico-loading,
+.historico-empty {
+  padding: 48px;
+  text-align: center;
+  color: #555;
+  font-size: 13px;
+}
+
+.historico-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.historico-table thead tr {
+  background: #1e1e1e;
+  border-bottom: 1px solid #333;
+}
+
+.historico-table th {
+  padding: 12px 16px;
+  font-size: 10px;
+  color: #555;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 500;
+  text-align: left;
+}
+
+.historico-row {
+  border-bottom: 1px solid #2a2a2a;
+  transition: background 0.15s ease;
+}
+
+.historico-row:hover { background: #2f2f2f; }
+.historico-row:last-child { border-bottom: none; }
+
+.historico-table td {
+  padding: 12px 16px;
+  font-size: 13px;
+}
+
+.col-data  { color: #666; font-size: 12px; white-space: nowrap; }
+.col-cat   { color: #aaa; font-size: 12px; }
+.col-desc  { color: #ddd; }
+.col-valor { font-weight: bold; white-space: nowrap; }
+.align-right { text-align: right; }
+
+/* ── Badges ── */
+.tipo-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.status-badge--pago    { background: #A2FF0115; color: #A2FF01; border: 1px solid #A2FF0133; }
+.status-badge--pendente { background: #ff990015; color: #ff9900; border: 1px solid #ff990033; }
