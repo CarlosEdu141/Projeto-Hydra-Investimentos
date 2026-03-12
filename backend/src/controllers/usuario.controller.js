@@ -1,49 +1,38 @@
 const usuarioModel = require('../models/usuario.model');
 const db = require('../config/database');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'financas_secret_key';
+const JWT_EXPIRES = '8h';
 
 // Criar
 async function criar(req, res) {
   try {
-
     const { nome, cpf, email, data_nascimento, password } = req.body;
 
     if (!nome || !cpf || !email || !data_nascimento || !password) {
-      return res.status(400).json({
-        mensagem: "Todos os campos são obrigatórios"
-      });
+      return res.status(400).json({ mensagem: "Todos os campos são obrigatórios" });
     }
 
-    // Verifica se CPF já existe
     const cpfExiste = await db.query(
-      "SELECT id_pessoa FROM pessoa WHERE cpf = $1",
-      [cpf]
+      "SELECT id_pessoa FROM pessoa WHERE cpf = $1", [cpf]
     );
 
     if (cpfExiste.rows.length > 0) {
-      return res.status(400).json({
-        mensagem: "CPF já cadastrado"
-      });
+      return res.status(400).json({ mensagem: "CPF já cadastrado" });
     }
 
-    // cria pessoa
     const pessoa = await db.query(
       `INSERT INTO pessoa (nome, cpf, email, data_nascimento)
-       VALUES ($1,$2,$3,$4)
-       RETURNING id_pessoa`,
+       VALUES ($1,$2,$3,$4) RETURNING id_pessoa`,
       [nome, cpf, email, data_nascimento]
     );
 
     const id_pessoa = pessoa.rows[0].id_pessoa;
-
-    // criptografa senha
     const senhaHash = await bcrypt.hash(password, 10);
 
-    // cria usuario
-    const usuario = await usuarioModel.criar({
-      id_pessoa,
-      password: senhaHash
-    });
+    const usuario = await usuarioModel.criar({ id_pessoa, password: senhaHash });
 
     res.status(201).json({
       mensagem: "Usuário criado com sucesso",
@@ -77,7 +66,6 @@ async function buscarPorId(req, res) {
     }
 
     res.json(resultado.rows[0]);
-
   } catch (erro) {
     res.status(500).json({ erro: erro.message });
   }
@@ -100,7 +88,6 @@ async function atualizar(req, res) {
     }
 
     res.json(resultado.rows[0]);
-
   } catch (erro) {
     res.status(500).json({ erro: erro.message });
   }
@@ -117,26 +104,22 @@ async function remover(req, res) {
     }
 
     res.json({ mensagem: "Usuário removido com sucesso" });
-
   } catch (erro) {
     res.status(500).json({ erro: erro.message });
   }
 }
 
+// Login — gera JWT com id_user, nome e email
 async function login(req, res) {
-
   try {
-
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({
-        mensagem: "Email e senha são obrigatórios"
-      });
+      return res.status(400).json({ mensagem: "Email e senha são obrigatórios" });
     }
 
     const resultado = await db.query(`
-      SELECT 
+      SELECT
         u.id_user,
         u.password,
         p.nome,
@@ -147,45 +130,40 @@ async function login(req, res) {
     `, [email]);
 
     if (resultado.rows.length === 0) {
-      return res.status(401).json({
-        mensagem: "Usuário não encontrado"
-      });
+      return res.status(401).json({ mensagem: "Usuário não encontrado" });
     }
 
     const usuario = resultado.rows[0];
-
     const senhaCorreta = await bcrypt.compare(password, usuario.password);
 
     if (!senhaCorreta) {
-      return res.status(401).json({
-        mensagem: "Senha incorreta"
-      })
+      return res.status(401).json({ mensagem: "Senha incorreta" });
     }
+
+    // Gera o token com os dados do usuário
+    const token = jwt.sign(
+      {
+        id_user: usuario.id_user,
+        nome:    usuario.nome,
+        email:   usuario.email,
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES }
+    );
 
     res.json({
       mensagem: "Login realizado com sucesso",
+      token,
       usuario: {
-        id: usuario.id_user,
-        nome: usuario.nome,
-        email: usuario.email
+        id:    usuario.id_user,
+        nome:  usuario.nome,
+        email: usuario.email,
       }
     });
 
   } catch (erro) {
-
-    res.status(500).json({
-      erro: erro.message
-    });
-
+    res.status(500).json({ erro: erro.message });
   }
-
 }
 
-module.exports = {
-  criar,
-  listar,
-  buscarPorId,
-  atualizar,
-  remover,
-  login
-};
+module.exports = { criar, listar, buscarPorId, atualizar, remover, login };

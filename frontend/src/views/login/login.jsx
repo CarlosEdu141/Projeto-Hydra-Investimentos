@@ -3,26 +3,16 @@ import { useNavigate } from "react-router-dom";
 import "./login.css";
 
 export default function Auth() {
-
   const navigate = useNavigate();
-
   const [mode, setMode] = useState("login");
-
   const [form, setForm] = useState({
-    nome: "",
-    cpf: "",
-    nascimento: "",
-    email: "",
-    password: "",
-    confirmPassword: ""
+    nome: "", cpf: "", nascimento: "",
+    email: "", password: "", confirmPassword: ""
   });
-
   const [loginStatus, setLoginStatus] = useState("idle");
-  // idle | success | error
 
   const API = "http://localhost:3333/usuarios";
 
-  // formata CPF
   const formatCPF = (value) => {
     value = value.replace(/\D/g, "");
     value = value.replace(/(\d{3})(\d)/, "$1.$2");
@@ -32,41 +22,24 @@ export default function Auth() {
   };
 
   const handleChange = (e) => {
-
     const { name, value } = e.target;
-
     if (name === "cpf") {
-      setForm({
-        ...form,
-        cpf: formatCPF(value)
-      });
+      setForm({ ...form, cpf: formatCPF(value) });
       return;
     }
-
-    setForm({
-      ...form,
-      [name]: value
-    });
+    setForm({ ...form, [name]: value });
   };
 
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
-    // LOGIN
+    // ── LOGIN ──────────────────────────────────────────────
     if (mode === "login") {
-
       try {
-
         const response = await fetch(`${API}/login`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            email: form.email,
-            password: form.password
-          })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email, password: form.password })
         });
 
         const data = await response.json();
@@ -74,64 +47,50 @@ export default function Auth() {
         if (!response.ok) {
           setLoginStatus("error");
           alert(data.mensagem || "Erro no login");
-
           setTimeout(() => setLoginStatus("idle"), 2000);
           return;
         }
 
+        // Salva token e dados do usuário no sessionStorage
+        sessionStorage.setItem("token",   data.token);
+        sessionStorage.setItem("id_user", data.usuario.id);
+        sessionStorage.setItem("nome",    data.usuario.nome);
+        sessionStorage.setItem("email",   data.usuario.email);
+
         setLoginStatus("success");
-
-        console.log("Usuário logado:", data.usuario);
-
-        setTimeout(() => {
-          
-          navigate("/home");
-
-        }, 1000);
+        setTimeout(() => navigate("/home"), 1000);
 
       } catch (erro) {
-
         console.error(erro);
         setLoginStatus("error");
         alert("Erro ao conectar com servidor");
-
         setTimeout(() => setLoginStatus("idle"), 2000);
-
       }
-
       return;
     }
 
-    // VALIDAÇÃO CADASTRO
+    // ── CADASTRO ───────────────────────────────────────────
     if (form.password !== form.confirmPassword) {
       alert("Senhas não coincidem");
       return;
     }
 
-    // CADASTRO
     try {
-
       const body = {
-        nome: form.nome,
-        cpf: form.cpf.replace(/\D/g, ""),
-        email: form.email,
+        nome:            form.nome,
+        cpf:             form.cpf.replace(/\D/g, ""),
+        email:           form.email,
         data_nascimento: form.nascimento,
-        password: form.password
+        password:        form.password
       };
-
-      console.log("Enviando dados:", body);
 
       const response = await fetch(API, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
 
       const data = await response.json();
-
-      console.log("Resposta servidor:", data);
 
       if (!response.ok) {
         alert(data.mensagem || "Erro ao cadastrar");
@@ -139,136 +98,57 @@ export default function Auth() {
       }
 
       alert("Usuário cadastrado com sucesso!");
-
-      setForm({
-        nome: "",
-        cpf: "",
-        nascimento: "",
-        email: "",
-        password: "",
-        confirmPassword: ""
-      });
-
+      setForm({ nome: "", cpf: "", nascimento: "", email: "", password: "", confirmPassword: "" });
       setMode("login");
 
     } catch (erro) {
-
       console.error("Erro completo:", erro);
-
       alert("Erro ao conectar com o servidor");
-
     }
-
   };
 
   return (
-
     <div className="login-container">
-
       <div className="login-card">
 
         <div className="auth-tabs">
-
-          <button
-            type="button"
-            className={mode === "login" ? "active" : ""}
-            onClick={() => setMode("login")}
-          >
+          <button type="button" className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>
             Login
           </button>
-
-          <button
-            type="button"
-            className={mode === "register" ? "active" : ""}
-            onClick={() => setMode("register")}
-          >
+          <button type="button" className={mode === "register" ? "active" : ""} onClick={() => setMode("register")}>
             Cadastro
           </button>
-
         </div>
 
         <form onSubmit={handleSubmit} key={mode} className="form-container">
-
           <div className="form-fields">
 
             {mode === "register" && (
               <>
-                <input
-                  type="text"
-                  name="nome"
-                  placeholder="Nome completo"
-                  value={form.nome}
-                  onChange={handleChange}
-                  required
-                />
-
-                <input
-                  type="text"
-                  name="cpf"
-                  placeholder="CPF"
-                  value={form.cpf}
-                  onChange={handleChange}
-                  maxLength={14}
-                  required
-                />
-
-                <input
-                  type="date"
-                  name="nascimento"
-                  value={form.nascimento}
-                  onChange={handleChange}
-                  required
-                />
+                <input type="text"  name="nome"       placeholder="Nome completo" value={form.nome}       onChange={handleChange} required />
+                <input type="text"  name="cpf"        placeholder="CPF"           value={form.cpf}        onChange={handleChange} maxLength={14} required />
+                <input type="date"  name="nascimento"                              value={form.nascimento} onChange={handleChange} required />
               </>
             )}
 
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
-
-            <input
-              type="password"
-              name="password"
-              placeholder="Senha"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
+            <input type="email"    name="email"           placeholder="Email"           value={form.email}           onChange={handleChange} required />
+            <input type="password" name="password"        placeholder="Senha"           value={form.password}        onChange={handleChange} required />
 
             {mode === "register" && (
-              <input
-                type="password"
-                name="confirmPassword"
-                placeholder="Confirmar senha"
-                value={form.confirmPassword}
-                onChange={handleChange}
-                required
-              />
+              <input type="password" name="confirmPassword" placeholder="Confirmar senha" value={form.confirmPassword} onChange={handleChange} required />
             )}
 
             <button
               type="submit"
-              className={`submit-button 
-                ${loginStatus === "success" ? "login-success" : ""}
-                ${loginStatus === "error" ? "login-error" : ""}
-              `}
+              className={`submit-button ${loginStatus === "success" ? "login-success" : ""} ${loginStatus === "error" ? "login-error" : ""}`}
             >
               {mode === "login" ? "Entrar" : "Cadastrar"}
             </button>
 
           </div>
-
         </form>
 
       </div>
-
     </div>
-
   );
-
 }

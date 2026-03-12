@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import "./home.css";
 
 // ── Config ───────────────────────────────────────────────────────────────────
@@ -14,13 +15,12 @@ const COR = {
   [TIPO.ENTRADA]:        "#A2FF01",
   [TIPO.SAIDA_FIXA]:     "#ff4d4d",
   [TIPO.SAIDA_VARIAVEL]: "#ff9900",
-  SALDO_POS:   "#A2FF01",
-  SALDO_NEG:   "#ff4d4d",
-  SALDO_LIVRE: "#00a6c0",
+  SALDO_POS:    "#A2FF01",
+  SALDO_NEG:    "#ff4d4d",
+  SALDO_LIVRE:  "#00a6c0",
   TOTAL_SAIDAS: "#ffffff",
 };
 
-// Classe CSS do formulário por tipo — garante cor correta nos inputs
 const FORM_CLASS = {
   [TIPO.ENTRADA]:        "form--entrada",
   [TIPO.SAIDA_FIXA]:     "form--fixa",
@@ -33,10 +33,19 @@ const formatBRL = (v) =>
 
 const generateId = () => Math.random().toString(36).slice(2);
 
+// Retorna o token salvo no sessionStorage
+const getToken = () => sessionStorage.getItem("token");
+
+// Headers padrão com Authorization para todas as chamadas autenticadas
+const authHeaders = () => ({
+  "Content-Type": "application/json",
+  "Authorization": `Bearer ${getToken()}`,
+});
+
 const CAT_PADRAO = {
-  [TIPO.ENTRADA]:        ["Salário", "Freelance", "Dividendos", "Aluguel recebido", "Rendimento", "Outro"],
-  [TIPO.SAIDA_FIXA]:     ["Luz", "Água", "Internet", "Aluguel", "Supermercado", "Matrícula", "Plano de saúde", "Combustível", "Outro"],
-  [TIPO.SAIDA_VARIAVEL]: ["Lazer", "Restaurante", "Roupas", "Viagem", "Farmácia", "Beleza", "Delivery", "Assinatura", "Presente", "Outro"],
+  [TIPO.ENTRADA]:        ["Salário", "Freelance", "Dividendos", "Aluguel recebido", "Rendimento", "Outros (entrada)"],
+  [TIPO.SAIDA_FIXA]:     ["Luz", "Água", "Internet", "Aluguel", "Supermercado", "Matrícula", "Plano de saúde", "Combustível", "Outros (fixo)"],
+  [TIPO.SAIDA_VARIAVEL]: ["Lazer", "Restaurante", "Roupas", "Viagem", "Farmácia", "Beleza", "Delivery", "Assinatura", "Presente", "Outros (variável)"],
 };
 
 const LABEL_TIPO = {
@@ -48,27 +57,41 @@ const LABEL_TIPO = {
 const EMPTY_FORM = () => ({
   descricao: "", valor: "", id_categoria: "", id_conta: "",
   data_lancamento: new Date().toISOString().split("T")[0],
-  status: "ATIVO",
+  status: "PENDENTE",
 });
 
 // ── API ───────────────────────────────────────────────────────────────────────
 const fetchLancamentos = async () => {
-  const r = await fetch(`${API}/lancamentos`);
-  if (!r.ok) throw new Error();
+  const r = await fetch(`${API}/lancamentos`, { headers: authHeaders() });
+  if (r.status === 401) throw new Error("unauthorized");
+  if (!r.ok) throw new Error("fetch_error");
   return r.json();
 };
+
 const fetchCategorias = async () => {
-  const r = await fetch(`${API}/categorias`);
-  if (!r.ok) throw new Error();
+  const r = await fetch(`${API}/categorias`, { headers: authHeaders() });
+  if (!r.ok) throw new Error("fetch_error");
   return r.json();
 };
+
 const postLancamento = async (dados) => {
   const r = await fetch(`${API}/lancamentos`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(),
     body: JSON.stringify(dados),
   });
-  if (!r.ok) throw new Error();
+  if (r.status === 401) throw new Error("unauthorized");
+  if (!r.ok) throw new Error("post_error");
+  return r.json();
+};
+
+const deleteLancamento = async (id) => {
+  const r = await fetch(`${API}/lancamentos/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (r.status === 401) throw new Error("unauthorized");
+  if (!r.ok) throw new Error("delete_error");
   return r.json();
 };
 
@@ -104,20 +127,14 @@ function DonutChart({ entradas, saidasFixas, saidasVariaveis }) {
 
   if (total === 0) return <div className="donut-empty">Adicione dados</div>;
 
-  // SVG 210×210 | raio 78 | espessura 28 → buraco interno ≈ 100px diâmetro
   const cx = 105, cy = 105, r = 78;
   const circ = 2 * Math.PI * r;
   const dE = (entradas        / total) * circ;
   const dF = (saidasFixas     / total) * circ;
   const dV = (saidasVariaveis / total) * circ;
 
-  // Fonte escala com magnitude — garante caber no buraco de ~100px
   const abs = Math.abs(saldo);
-  const fs  = abs >= 10_000_000 ? 7
-            : abs >= 1_000_000  ? 8
-            : abs >= 100_000    ? 9
-            : abs >= 10_000     ? 10
-            : 12;
+  const fs  = abs >= 10_000_000 ? 7 : abs >= 1_000_000 ? 8 : abs >= 100_000 ? 9 : abs >= 10_000 ? 10 : 12;
 
   return (
     <div className="donut-body">
@@ -134,7 +151,6 @@ function DonutChart({ entradas, saidasFixas, saidasVariaveis }) {
             strokeDasharray={`${dV} ${circ - dV}`} strokeDashoffset={-(dE + dF)} strokeLinecap="butt"
             transform={`rotate(-90 ${cx} ${cy})`} style={{ transition: "stroke-dasharray 0.6s ease" }} />
         </svg>
-
         <div className="donut-center">
           <span className="donut-center__label">SALDO</span>
           <span
@@ -145,7 +161,6 @@ function DonutChart({ entradas, saidasFixas, saidasVariaveis }) {
           </span>
         </div>
       </div>
-
       <div className="donut-legend">
         {[
           ["Entradas",  COR[TIPO.ENTRADA],        entradas],
@@ -171,7 +186,7 @@ function TableRow({ item, onDelete, tipo }) {
   const prefix = tipo === TIPO.ENTRADA ? "+" : "-";
   return (
     <tr className="table-row">
-      <td className="table-row__cat">{item.categoria_nome || item.id_categoria || "—"}</td>
+      <td className="table-row__cat">{item.categoria_nome || "—"}</td>
       <td className="table-row__desc">{item.descricao || "—"}</td>
       <td className="table-row__value" style={{ color }}>{prefix}{formatBRL(item.valor)}</td>
       <td className="table-row__actions">
@@ -182,7 +197,6 @@ function TableRow({ item, onDelete, tipo }) {
 }
 
 // ── AddRow ────────────────────────────────────────────────────────────────────
-// Usa FORM_CLASS[tipo] no <tr> — o CSS define cores por classe, sem CSS vars
 function AddRow({ tipo, categorias, onAdd, saving }) {
   const [form, setForm]     = useState(EMPTY_FORM());
   const [adding, setAdding] = useState(false);
@@ -201,17 +215,22 @@ function AddRow({ tipo, categorias, onAdd, saving }) {
     const parsed = parseFloat(form.valor);
     if (!form.valor || isNaN(parsed)) return;
     await onAdd({
-      id_user: 1,
-      id_categoria: form.id_categoria || catOptions[0]?.value || null,
-      id_conta: form.id_conta || null,
-      descricao: form.descricao,
-      valor: parsed,
+      id_categoria:    form.id_categoria || catOptions[0]?.value || null,
+      id_conta:        form.id_conta     || null,
+      descricao:       form.descricao,
+      valor:           parsed,
       data_lancamento: form.data_lancamento,
       tipo,
-      status: "ATIVO",
+      status:          "PENDENTE",
     });
     setForm(EMPTY_FORM());
     setAdding(false);
+  };
+
+  const btnConfirmStyle = {
+    background: `${accent}25`,
+    border:     `1px solid ${accent}99`,
+    color:      accent,
   };
 
   if (!adding) {
@@ -221,14 +240,8 @@ function AddRow({ tipo, categorias, onAdd, saving }) {
           <button
             className="btn-add-trigger"
             style={{ border: `1px dashed ${accent}44`, color: accent }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = `${accent}11`;
-              e.currentTarget.style.boxShadow  = `0 0 10px ${accent}22`;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "none";
-              e.currentTarget.style.boxShadow  = "none";
-            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = `${accent}11`; e.currentTarget.style.boxShadow = `0 0 10px ${accent}22`; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.boxShadow = "none"; }}
             onClick={() => setAdding(true)}
           >
             + Adicionar {LABEL_TIPO[tipo]}
@@ -238,37 +251,18 @@ function AddRow({ tipo, categorias, onAdd, saving }) {
     );
   }
 
-  // Botão confirmar: fundo semitransparente da cor do tipo
-  const btnConfirmStyle = {
-    background: `${accent}25`,
-    border: `1px solid ${accent}99`,
-    color: accent,
-  };
-
   return (
-    // FORM_CLASS[tipo] = "form--entrada" | "form--fixa" | "form--variavel"
     <tr className={`add-row-form ${FORM_CLASS[tipo]}`}>
       <td>
         <select value={form.id_categoria} onChange={(e) => handle("id_categoria", e.target.value)}>
-          {catOptions.map((c) => (
-            <option key={c.value} value={c.value}>{c.label}</option>
-          ))}
+          {catOptions.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
       </td>
       <td>
-        <input
-          value={form.descricao}
-          onChange={(e) => handle("descricao", e.target.value)}
-          placeholder="Descrição..."
-        />
+        <input value={form.descricao} onChange={(e) => handle("descricao", e.target.value)} placeholder="Descrição..." />
       </td>
       <td>
-        <input
-          type="number"
-          value={form.valor}
-          onChange={(e) => handle("valor", e.target.value)}
-          placeholder="0,00"
-        />
+        <input type="number" value={form.valor} onChange={(e) => handle("valor", e.target.value)} placeholder="0,00" />
       </td>
       <td className="add-row-actions">
         <button className="btn-confirm" style={btnConfirmStyle} onClick={submit} disabled={saving}>
@@ -320,11 +314,21 @@ function TableCard({ title, subtitle, total, tipo, loading, children }) {
 
 // ── Home ──────────────────────────────────────────────────────────────────────
 export default function Home() {
+  const navigate = useNavigate();
+
   const [lancamentos, setLancamentos] = useState([]);
   const [categorias,  setCategorias]  = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [saving,      setSaving]      = useState(false);
   const [apiError,    setApiError]    = useState(null);
+
+  // Nome do usuário logado para exibir na tela
+  const nomeUsuario = sessionStorage.getItem("nome") || "Usuário";
+
+  // Redireciona para login se não tiver token
+  useEffect(() => {
+    if (!getToken()) navigate("/", { replace: true });
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -334,13 +338,23 @@ export default function Home() {
         const [lancs, cats] = await Promise.all([fetchLancamentos(), fetchCategorias()]);
         setLancamentos(lancs);
         setCategorias(cats);
-      } catch {
-        setApiError("Não foi possível conectar com o servidor. Verifique se o backend está rodando em http://localhost:3333");
+      } catch (err) {
+        if (err.message === "unauthorized") {
+          sessionStorage.clear();
+          navigate("/", { replace: true });
+        } else {
+          setApiError("Não foi possível conectar com o servidor.");
+        }
       } finally {
         setLoading(false);
       }
     })();
   }, []);
+
+  const handleLogout = () => {
+    sessionStorage.clear();
+    navigate("/", { replace: true });
+  };
 
   const entradas        = useMemo(() => lancamentos.filter((l) => l.tipo === TIPO.ENTRADA),        [lancamentos]);
   const saidasFixas     = useMemo(() => lancamentos.filter((l) => l.tipo === TIPO.SAIDA_FIXA),     [lancamentos]);
@@ -356,7 +370,7 @@ export default function Home() {
   const topSaidas = useMemo(() => {
     const bycat = {};
     [...saidasFixas, ...saidasVariaveis].forEach((s) => {
-      const nome = s.categoria_nome || String(s.id_categoria) || "Outros";
+      const nome = s.categoria_nome || "Outros";
       bycat[nome] = { val: (bycat[nome]?.val || 0) + Number(s.valor), tipo: s.tipo };
     });
     return Object.entries(bycat).sort((a, b) => b[1].val - a[1].val).slice(0, 5);
@@ -367,21 +381,58 @@ export default function Home() {
     setSaving(true);
     setApiError(null);
     try {
-      const novo = await postLancamento(payload);
-      setLancamentos((prev) => [...prev, novo]);
-    } catch {
-      setLancamentos((prev) => [...prev, { ...payload, _localId: generateId(), id_lancamento: null }]);
-      setApiError("Lançamento salvo localmente (sem conexão com servidor).");
+      await postLancamento(payload);
+      // Recarrega todos os lançamentos do banco para garantir categoria_nome via JOIN
+      const atualizados = await fetchLancamentos();
+      setLancamentos(atualizados);
+    } catch (err) {
+      if (err.message === "unauthorized") {
+        sessionStorage.clear();
+        navigate("/", { replace: true });
+      } else {
+        setLancamentos((prev) => [...prev, { ...payload, _localId: generateId(), id_lancamento: null }]);
+        setApiError("Lançamento salvo localmente (sem conexão com servidor).");
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = (id) =>
+  const handleDelete = async (id) => {
+    // Remove visualmente imediato
     setLancamentos((prev) => prev.filter((l) => (l.id_lancamento || l._localId) !== id));
+    // Se tem id real, persiste no banco
+    if (typeof id === "number" || (typeof id === "string" && !id.includes("-"))) {
+      try {
+        await deleteLancamento(id);
+      } catch (err) {
+        if (err.message === "unauthorized") {
+          sessionStorage.clear();
+          navigate("/", { replace: true });
+        }
+      }
+    }
+  };
 
   return (
     <div className="home-page">
+
+      {/* ── Header com nome do usuário e logout ── */}
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "20px", gap: "12px" }}>
+        <span style={{ fontSize: "13px", color: "#888" }}>Olá, <strong style={{ color: "#fff" }}>{nomeUsuario}</strong></span>
+        <button
+          onClick={handleLogout}
+          style={{
+            background: "none", border: "1px solid #444", color: "#888",
+            borderRadius: "8px", padding: "5px 14px", fontSize: "12px",
+            cursor: "pointer", transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#ff4d4d"; e.currentTarget.style.color = "#ff4d4d"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#444"; e.currentTarget.style.color = "#888"; }}
+        >
+          Sair
+        </button>
+      </div>
 
       {apiError && <div className="api-error-banner"><span>⚠️</span> {apiError}</div>}
 

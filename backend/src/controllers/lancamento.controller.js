@@ -4,8 +4,11 @@ async function criar(req, res) {
   try {
     const dados = req.body;
 
-    if (!dados.id_user || !dados.valor || !dados.tipo) {
-      return res.status(400).json({ erro: 'Dados obrigatórios ausentes (id_user, valor, tipo)' });
+    // id_user vem do token JWT — ignora qualquer id_user enviado pelo frontend
+    dados.id_user = req.user.id_user;
+
+    if (!dados.valor || !dados.tipo) {
+      return res.status(400).json({ erro: 'Dados obrigatórios ausentes (valor, tipo)' });
     }
 
     const tiposValidos = ['ENTRADA', 'SAIDA_FIXA', 'SAIDA_VARIAVEL'];
@@ -23,7 +26,10 @@ async function criar(req, res) {
 
 async function listar(req, res) {
   try {
-    const { tipo, id_user } = req.query;
+    // id_user vem do token — usuário só vê seus próprios lançamentos
+    const id_user = req.user.id_user;
+    const { tipo } = req.query;
+
     const { rows } = await LancamentoModel.listarLancamentos({ tipo, id_user });
     res.json(rows);
   } catch (err) {
@@ -35,11 +41,7 @@ async function listar(req, res) {
 async function deletar(req, res) {
   try {
     const { id } = req.params;
-    const { id_user } = req.query;
-
-    if (!id_user) {
-      return res.status(400).json({ erro: 'id_user obrigatório' });
-    }
+    const id_user = req.user.id_user;
 
     const { rows } = await LancamentoModel.deletarLancamento(id, id_user);
 
