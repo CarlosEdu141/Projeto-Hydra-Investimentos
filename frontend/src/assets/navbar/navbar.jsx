@@ -19,15 +19,13 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      {/* ── Logo ── */}
       <div className="navbar__brand">
-        <span className="navbar__brand-icon">₿</span>
+        <span className="navbar__brand-icon">◈</span>
         <span className="navbar__brand-name">
-          Arquiteto<strong>Financeiro</strong>
+            <strong>Hydra</strong>Finanças
         </span>
       </div>
 
-      {/* ── Links ── */}
       <div className="navbar__links">
         {links.map((l) => (
           <NavLink
@@ -43,7 +41,6 @@ export default function Navbar() {
         ))}
       </div>
 
-      {/* ── Usuário + Sair ── */}
       <div className="navbar__user">
         <span className="navbar__user-name">
           Olá, <strong>{primeiroNome}</strong>

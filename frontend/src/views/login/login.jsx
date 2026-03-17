@@ -33,7 +33,6 @@ export default function Auth() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ── LOGIN ──────────────────────────────────────────────
     if (mode === "login") {
       try {
         const response = await fetch(`${API}/login`, {
@@ -51,7 +50,6 @@ export default function Auth() {
           return;
         }
 
-        // Salva token e dados do usuário no sessionStorage
         sessionStorage.setItem("token",   data.token);
         sessionStorage.setItem("id_user", data.usuario.id);
         sessionStorage.setItem("nome",    data.usuario.nome);
@@ -69,7 +67,6 @@ export default function Auth() {
       return;
     }
 
-    // ── CADASTRO ───────────────────────────────────────────
     if (form.password !== form.confirmPassword) {
       alert("Senhas não coincidem");
       return;
@@ -110,6 +107,8 @@ export default function Auth() {
   return (
     <div className="login-container">
       <div className="login-card">
+
+        <img src="/img/logoComTexto.jpg" alt="Hydra Investimentos" className="login__logo" />
 
         <div className="auth-tabs">
           <button type="button" className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>

@@ -367,6 +367,17 @@ export default function Home() {
   const saldo          = totalEntradas - totalSaidas;
   const pctSaude       = totalEntradas > 0 ? Math.round((saldo / totalEntradas) * 100) : 0;
 
+  // Cor dinâmica do box-shadow do card donut
+  const pctSaldo = totalEntradas > 0 ? saldo / totalEntradas : 0;
+  const temDados = lancamentos.length > 0;
+  const corSaldo = !temDados
+    ? "transparent"
+    : saldo < 0
+    ?"#ff4d4d"
+    : pctSaldo > 0.50 ? "#A2FF01"
+    : pctSaldo > 0.25 ? "#ff9900"
+    : "#ff4d4d";
+
   const topSaidas = useMemo(() => {
     const bycat = {};
     [...saidasFixas, ...saidasVariaveis].forEach((s) => {
@@ -419,6 +430,34 @@ export default function Home() {
 
       {apiError && <div className="api-error-banner"><span>⚠️</span> {apiError}</div>}
 
+      {/* ── Alertas ── */}
+      <div className="alerts alerts--top">
+        {saldo < 0 && (
+          <div className="alert alert--danger">
+            <span className="alert__icon">⚠️</span>
+            <span className="alert__text">
+              Atenção: suas saídas ({formatBRL(totalSaidas)}) superam as entradas ({formatBRL(totalEntradas)}) em <strong>{formatBRL(Math.abs(saldo))}</strong>.
+            </span>
+          </div>
+        )}
+        {totalVariaveis > totalFixas && totalEntradas > 0 && (
+          <div className="alert alert--warning">
+            <span className="alert__icon">📊</span>
+            <span className="alert__text">
+              Saídas variáveis ({formatBRL(totalVariaveis)}) maiores que as fixas ({formatBRL(totalFixas)}). Atenção aos gastos eventuais.
+            </span>
+          </div>
+        )}
+        {saldo >= 0 && pctSaude < 20 && totalEntradas > 0 && (
+          <div className="alert alert--info">
+            <span className="alert__icon">💡</span>
+            <span className="alert__text">
+              Saldo livre baixo ({pctSaude}% da renda). Considere revisar suas despesas.
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* ── KPI Cards ── */}
       <div className="kpi-grid">
         <KpiCard label="ENTRADAS"         value={formatBRL(totalEntradas)}  color={COR[TIPO.ENTRADA]}        icon="↑" sub={`${entradas.length} fonte${entradas.length !== 1 ? "s" : ""}`} />
@@ -431,12 +470,17 @@ export default function Home() {
       {/* ── Middle Row ── */}
       <div className="middle-grid">
 
-        <div className="widget-card widget-card--donut">
+        <div
+          className="widget-card widget-card--donut"
+          style={{
+                boxShadow:   lancamentos.length > 0 ? `0 0 24px ${corSaldo}88` : "none",
+                borderColor: lancamentos.length > 0 ? `${corSaldo}99` : "#2a2a2a", }}
+        >
           <div className="widget-card__label">COMPOSIÇÃO</div>
           <DonutChart entradas={totalEntradas} saidasFixas={totalFixas} saidasVariaveis={totalVariaveis} />
         </div>
 
-        <div className="widget-card">
+        <div className="widget-card widget-card--side">
           <div className="widget-card__label">TOP CATEGORIAS — SAÍDAS</div>
           {topSaidas.length === 0 ? (
             <p className="top-cat__empty">Nenhuma saída cadastrada</p>
@@ -466,7 +510,7 @@ export default function Home() {
           )}
         </div>
 
-        <div className="widget-card">
+        <div className="widget-card widget-card--side">
           <div className="widget-card__label">FIXAS vs VARIÁVEIS</div>
           <div className="fv-list">
             {[
@@ -520,34 +564,6 @@ export default function Home() {
           {saidasVariaveis.map((item) => <TableRow key={item.id_lancamento || item._localId} item={item} tipo={TIPO.SAIDA_VARIAVEL} onDelete={handleDelete} />)}
           <AddRow tipo={TIPO.SAIDA_VARIAVEL} categorias={categorias} onAdd={handleAdd} saving={saving} />
         </TableCard>
-      </div>
-
-      {/* ── Alertas ── */}
-      <div className="alerts">
-        {saldo < 0 && (
-          <div className="alert alert--danger">
-            <span className="alert__icon">⚠️</span>
-            <span className="alert__text">
-              Atenção: suas saídas ({formatBRL(totalSaidas)}) superam as entradas ({formatBRL(totalEntradas)}) em <strong>{formatBRL(Math.abs(saldo))}</strong>.
-            </span>
-          </div>
-        )}
-        {totalVariaveis > totalFixas && totalEntradas > 0 && (
-          <div className="alert alert--warning">
-            <span className="alert__icon">📊</span>
-            <span className="alert__text">
-              Saídas variáveis ({formatBRL(totalVariaveis)}) maiores que as fixas ({formatBRL(totalFixas)}). Atenção aos gastos eventuais.
-            </span>
-          </div>
-        )}
-        {saldo >= 0 && pctSaude < 20 && totalEntradas > 0 && (
-          <div className="alert alert--info">
-            <span className="alert__icon">💡</span>
-            <span className="alert__text">
-              Saldo livre baixo ({pctSaude}% da renda). Considere revisar suas despesas.
-            </span>
-          </div>
-        )}
       </div>
 
     </div>

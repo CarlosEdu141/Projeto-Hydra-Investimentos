@@ -18,12 +18,23 @@
   padding: 40px;
   border-radius: 16px;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   color: white;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  transition: 0.3s ease;
+}
+
+/* =========================================
+   Logo dentro do card
+========================================= */
+.login__logo {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
 }
 
 /* =========================================
@@ -32,7 +43,6 @@
 .auth-tabs {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
 }
 
 .auth-tabs button {
@@ -47,7 +57,6 @@
   transition: 0.3s ease;
 }
 
-/* Aba ativa */
 .auth-tabs button.active {
   color: #A2FF01;
   border-bottom: 2px solid #A2FF01;
@@ -56,27 +65,17 @@
 /* =========================================
    ANIMAÇÃO SUAVE DO FORM
 ========================================= */
-.form-container {
-  width: 100%;
-}
+.form-container { width: 100%; }
 
-.form-fields {
-  animation: fadeSlide 0.4s ease;
-}
+.form-fields { animation: fadeSlide 0.4s ease; }
 
 @keyframes fadeSlide {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(15px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* =========================================
-   INPUTS NEON DINÂMICOS
+   INPUTS
 ========================================= */
 .login-card input {
   width: 100%;
@@ -91,13 +90,8 @@
   font-size: 14px;
 }
 
-/* Placeholder */
-.login-card input::placeholder {
-  color: #A2FF01;
-  opacity: 0.6;
-}
+.login-card input::placeholder { color: #A2FF01; opacity: 0.6; }
 
-/* INPUT EM FOCO */
 .login-card input:focus {
   background-color: #A2FF01;
   color: black;
@@ -105,34 +99,18 @@
   border: 2px solid #A2FF01;
 }
 
-/* INPUT COM TEXTO (EXCETO DATE) */
 .login-card input:not([type="date"]):not(:placeholder-shown) {
   background-color: #A2FF01;
   color: black;
 }
 
-/* Ajusta placeholder quando focado */
-.login-card input:focus::placeholder {
-  color: black;
-}
+.login-card input:focus::placeholder { color: black; }
+
+.login-card input[type="date"] { font-family: inherit; color-scheme: dark; }
+.login-card input[type="date"]:valid { background-color: #A2FF01; color: black; }
 
 /* =========================================
-   DATE INPUT
-========================================= */
-
-.login-card input[type="date"] {
-  font-family: inherit;
-  color-scheme: dark;
-}
-
-/* quando preenchido */
-.login-card input[type="date"]:valid {
-  background-color: #A2FF01;
-  color: black;
-}
-
-/* =========================================
-   BOTÃO PRINCIPAL
+   BOTÃO
 ========================================= */
 .submit-button {
   width: 100%;
@@ -146,70 +124,22 @@
   transition: all 0.3s ease;
 }
 
-/* Hover botão */
-.submit-button:hover {
-  box-shadow: 0 0 20px #A2FF01;
-  transform: scale(1.03);
-}
+.submit-button:hover { box-shadow: 0 0 20px #A2FF01; transform: scale(1.03); }
+.submit-button:active { transform: scale(0.98); }
 
-/* Clique botão */
-.submit-button:active {
-  transform: scale(0.98);
-}
-
-/* =========================================
-   ESTADO LOGIN CORRETO
-========================================= */
 .submit-button.login-success {
-  background-color: #1e7e34;
-  color: white;
-  box-shadow: 0 0 15px #00ff88;
+  background-color: #1e7e34; color: white; box-shadow: 0 0 15px #00ff88;
 }
 
-/* =========================================
-   ESTADO LOGIN ERRADO
-========================================= */
 .submit-button.login-error {
-  background-color: #b31212;
-  color: white;
-  box-shadow: 0 0 15px #ff2a2a;
-  animation: shake 0.3s ease;
+  background-color: #b31212; color: white;
+  box-shadow: 0 0 15px #ff2a2a; animation: shake 0.3s ease;
 }
 
-/* =========================================
-   ANIMAÇÃO ERRO
-========================================= */
 @keyframes shake {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-3px); }
-  50% { transform: translateX(3px); }
-  75% { transform: translateX(-3px); }
+  0%   { transform: translateX(0); }
+  25%  { transform: translateX(-3px); }
+  50%  { transform: translateX(3px); }
+  75%  { transform: translateX(-3px); }
   100% { transform: translateX(0); }
-}
-
-/* =========================================
-   MENSAGENS (caso use depois)
-========================================= */
-.login-error {
-  background-color: #ff4d4f;
-  padding: 8px;
-  border-radius: 8px;
-  text-align: center;
-  font-size: 14px;
-}
-
-.login-success {
-  background-color: #28a745;
-  padding: 8px;
-  border-radius: 8px;
-  text-align: center;
-  font-size: 14px;
-}
-
-.login-failed {
-  background-color: #dc3545;
-  padding: 8px;
-  border-radius: 8px;
-  text-align: center;
-  font-size: 14px;
 }

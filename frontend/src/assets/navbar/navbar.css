@@ -16,29 +16,28 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* ── Logo ── */
+/* ── Brand ── */
 .navbar__brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  text-decoration: none;
   flex-shrink: 0;
+  padding-left: 25px;
 }
 
 .navbar__brand-icon {
-  font-size: 22px;
+  font-size: 18px;
   color: #A2FF01;
-  line-height: 1;
+  text-shadow: 0 0 10px #A2FF0188;
 }
 
 .navbar__brand-name {
   font-size: 14px;
-  color: #888;
-  letter-spacing: 0.5px;
+  color: #ffffff;
+  letter-spacing: 0.3px;
 }
 
 .navbar__brand-name strong {
-  color: #ffffff;
+  color: #A2FF01;
   font-weight: bold;
 }
 
@@ -93,6 +92,7 @@
   align-items: center;
   gap: 14px;
   flex-shrink: 0;
+  padding-right: 25px;
 }
 
 .navbar__user-name {
