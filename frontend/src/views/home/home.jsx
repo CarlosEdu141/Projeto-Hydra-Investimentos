@@ -2,15 +2,12 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "./home.css";
 
-// ── Config ───────────────────────────────────────────────────────────────────
 const API = "http://localhost:3333";
-
 const TIPO = {
   ENTRADA:        "ENTRADA",
   SAIDA_FIXA:     "SAIDA_FIXA",
   SAIDA_VARIAVEL: "SAIDA_VARIAVEL",
 };
-
 const COR = {
   [TIPO.ENTRADA]:        "#A2FF01",
   [TIPO.SAIDA_FIXA]:     "#ff4d4d",
@@ -20,75 +17,57 @@ const COR = {
   SALDO_LIVRE:  "#00a6c0",
   TOTAL_SAIDAS: "#ffffff",
 };
-
 const FORM_CLASS = {
   [TIPO.ENTRADA]:        "form--entrada",
   [TIPO.SAIDA_FIXA]:     "form--fixa",
   [TIPO.SAIDA_VARIAVEL]: "form--variavel",
 };
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 const formatBRL = (v) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
-
 const generateId = () => Math.random().toString(36).slice(2);
-
-// Retorna o token salvo no sessionStorage
 const getToken = () => sessionStorage.getItem("token");
-
-// Headers padrão com Authorization para todas as chamadas autenticadas
 const authHeaders = () => ({
   "Content-Type": "application/json",
   "Authorization": `Bearer ${getToken()}`,
 });
-
 const CAT_PADRAO = {
-  [TIPO.ENTRADA]:        ["Salário", "Freelance", "Dividendos", "Aluguel recebido", "Rendimento", "Outros (entrada)"],
-  [TIPO.SAIDA_FIXA]:     ["Luz", "Água", "Internet", "Aluguel", "Supermercado", "Matrícula", "Plano de saúde", "Combustível", "Outros (fixo)"],
-  [TIPO.SAIDA_VARIAVEL]: ["Lazer", "Restaurante", "Roupas", "Viagem", "Farmácia", "Beleza", "Delivery", "Assinatura", "Presente", "Outros (variável)"],
+  [TIPO.ENTRADA]:        ["Salário","Freelance","Dividendos","Aluguel recebido","Rendimento","Outros (entrada)"],
+  [TIPO.SAIDA_FIXA]:     ["Luz","Água","Internet","Aluguel","Supermercado","Matrícula","Plano de saúde","Combustível","Outros (fixo)"],
+  [TIPO.SAIDA_VARIAVEL]: ["Lazer","Restaurante","Roupas","Viagem","Farmácia","Beleza","Delivery","Assinatura","Presente","Outros (variável)"],
 };
-
 const LABEL_TIPO = {
   [TIPO.ENTRADA]:        "entrada",
   [TIPO.SAIDA_FIXA]:     "saída fixa",
   [TIPO.SAIDA_VARIAVEL]: "saída variável",
 };
-
 const EMPTY_FORM = () => ({
   descricao: "", valor: "", id_categoria: "", id_conta: "",
   data_lancamento: new Date().toISOString().split("T")[0],
   status: "PENDENTE",
 });
 
-// ── API ───────────────────────────────────────────────────────────────────────
 const fetchLancamentos = async () => {
   const r = await fetch(`${API}/lancamentos`, { headers: authHeaders() });
   if (r.status === 401) throw new Error("unauthorized");
   if (!r.ok) throw new Error("fetch_error");
   return r.json();
 };
-
 const fetchCategorias = async () => {
   const r = await fetch(`${API}/categorias`, { headers: authHeaders() });
   if (!r.ok) throw new Error("fetch_error");
   return r.json();
 };
-
 const postLancamento = async (dados) => {
   const r = await fetch(`${API}/lancamentos`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(dados),
+    method: "POST", headers: authHeaders(), body: JSON.stringify(dados),
   });
   if (r.status === 401) throw new Error("unauthorized");
   if (!r.ok) throw new Error("post_error");
   return r.json();
 };
-
 const deleteLancamento = async (id) => {
   const r = await fetch(`${API}/lancamentos/${id}`, {
-    method: "DELETE",
-    headers: authHeaders(),
+    method: "DELETE", headers: authHeaders(),
   });
   if (r.status === 401) throw new Error("unauthorized");
   if (!r.ok) throw new Error("delete_error");
@@ -124,22 +103,18 @@ function KpiCard({ label, value, color, icon, sub, isNegative }) {
 function DonutChart({ entradas, saidasFixas, saidasVariaveis }) {
   const total = entradas + saidasFixas + saidasVariaveis;
   const saldo = entradas - saidasFixas - saidasVariaveis;
-
   if (total === 0) return <div className="donut-empty">Adicione dados</div>;
-
   const cx = 105, cy = 105, r = 78;
   const circ = 2 * Math.PI * r;
   const dE = (entradas        / total) * circ;
   const dF = (saidasFixas     / total) * circ;
   const dV = (saidasVariaveis / total) * circ;
-
   const abs = Math.abs(saldo);
   const fs  = abs >= 10_000_000 ? 7 : abs >= 1_000_000 ? 8 : abs >= 100_000 ? 9 : abs >= 10_000 ? 10 : 12;
-
   return (
     <div className="donut-body">
       <div className="donut-wrapper">
-        <svg width="210" height="210" viewBox="0 0 210 210">
+        <svg width="100%" height="100%" viewBox="0 0 210 210" style={{ display: "block" }}>
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="#1a1a1a" strokeWidth="28" />
           <circle cx={cx} cy={cy} r={r} fill="none" stroke={COR[TIPO.ENTRADA]} strokeWidth="28"
             strokeDasharray={`${dE} ${circ - dE}`} strokeDashoffset="0" strokeLinecap="butt"
@@ -201,16 +176,13 @@ function AddRow({ tipo, categorias, onAdd, saving }) {
   const [form, setForm]     = useState(EMPTY_FORM());
   const [adding, setAdding] = useState(false);
   const accent = COR[tipo];
-
   const handle = (field, val) => setForm((f) => ({ ...f, [field]: val }));
-
   const catOptions = useMemo(() => {
     const fromApi = categorias.filter((c) => c.tipo === tipo);
     return fromApi.length > 0
       ? fromApi.map((c) => ({ label: c.nome, value: c.id_categoria }))
       : CAT_PADRAO[tipo].map((n) => ({ label: n, value: n }));
   }, [categorias, tipo]);
-
   const submit = async () => {
     const parsed = parseFloat(form.valor);
     if (!form.valor || isNaN(parsed)) return;
@@ -226,13 +198,9 @@ function AddRow({ tipo, categorias, onAdd, saving }) {
     setForm(EMPTY_FORM());
     setAdding(false);
   };
-
   const btnConfirmStyle = {
-    background: `${accent}25`,
-    border:     `1px solid ${accent}99`,
-    color:      accent,
+    background: `${accent}25`, border: `1px solid ${accent}99`, color: accent,
   };
-
   if (!adding) {
     return (
       <tr className="add-row-trigger">
@@ -250,7 +218,6 @@ function AddRow({ tipo, categorias, onAdd, saving }) {
       </tr>
     );
   }
-
   return (
     <tr className={`add-row-form ${FORM_CLASS[tipo]}`}>
       <td>
@@ -312,6 +279,66 @@ function TableCard({ title, subtitle, total, tipo, loading, children }) {
   );
 }
 
+// ── AddRowModal (versão mobile) ───────────────────────────────────────────────
+function AddRowModal({ tipo, categorias, onAdd, saving, onClose }) {
+  const [form, setForm] = useState(EMPTY_FORM());
+  const accent = COR[tipo];
+  const handle = (field, val) => setForm((f) => ({ ...f, [field]: val }));
+  const catOptions = useMemo(() => {
+    const fromApi = categorias.filter((c) => c.tipo === tipo);
+    return fromApi.length > 0
+      ? fromApi.map((c) => ({ label: c.nome, value: c.id_categoria }))
+      : CAT_PADRAO[tipo].map((n) => ({ label: n, value: n }));
+  }, [categorias, tipo]);
+  const submit = async () => {
+    const parsed = parseFloat(form.valor);
+    if (!form.valor || isNaN(parsed)) return;
+    await onAdd({
+      id_categoria:    form.id_categoria || catOptions[0]?.value || null,
+      id_conta:        null,
+      descricao:       form.descricao,
+      valor:           parsed,
+      data_lancamento: form.data_lancamento,
+      tipo,
+      status:          "PENDENTE",
+    });
+    setForm(EMPTY_FORM());
+  };
+  return (
+    <div className="mobile-modal-fields">
+      <div className="mobile-modal-row">
+        <div className="mobile-modal-field">
+          <label className="mobile-modal-label">Categoria</label>
+          <select className="mobile-modal-input" style={{ borderColor: `${accent}44`, color: "#ccc" }}
+            value={form.id_categoria} onChange={(e) => handle("id_categoria", e.target.value)}>
+            {catOptions.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+        <div className="mobile-modal-field">
+          <label className="mobile-modal-label">Valor (R$)</label>
+          <input className="mobile-modal-input" type="number" placeholder="0,00"
+            style={{ borderColor: `${accent}44`, color: accent, textAlign: "right" }}
+            value={form.valor} onChange={(e) => handle("valor", e.target.value)} />
+        </div>
+      </div>
+      <div className="mobile-modal-field">
+        <label className="mobile-modal-label">Descrição (opcional)</label>
+        <input className="mobile-modal-input" type="text" placeholder="Ex: Conta de luz..."
+          style={{ borderColor: `${accent}44` }}
+          value={form.descricao} onChange={(e) => handle("descricao", e.target.value)} />
+      </div>
+      <div className="mobile-modal-actions">
+        <button className="mobile-modal-btn-cancel" onClick={onClose}>Cancelar</button>
+        <button className="mobile-modal-btn-save"
+          style={{ background: `${accent}22`, border: `1px solid ${accent}88`, color: accent }}
+          onClick={submit} disabled={saving}>
+          {saving ? "Salvando..." : "Salvar"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Home ──────────────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate();
@@ -321,11 +348,13 @@ export default function Home() {
   const [loading,     setLoading]     = useState(true);
   const [saving,      setSaving]      = useState(false);
   const [apiError,    setApiError]    = useState(null);
+  const [modalMobile, setModalMobile] = useState(false);
+  const [modalTipo,   setModalTipo]   = useState(TIPO.ENTRADA);
 
-  // Nome do usuário logado para exibir na tela
-  const nomeUsuario = sessionStorage.getItem("nome") || "Usuário";
+  const hoje     = new Date();
+  const mesAtual = hoje.getMonth();
+  const anoAtual = hoje.getFullYear();
 
-  // Redireciona para login se não tiver token
   useEffect(() => {
     if (!getToken()) navigate("/", { replace: true });
   }, []);
@@ -351,14 +380,21 @@ export default function Home() {
     })();
   }, []);
 
-  const handleLogout = () => {
-    sessionStorage.clear();
-    navigate("/", { replace: true });
-  };
+  // Escuta o FAB da navbar para abrir o modal
+  useEffect(() => {
+    const handler = () => setModalMobile(true);
+    window.addEventListener("openLancamentoModal", handler);
+    return () => window.removeEventListener("openLancamentoModal", handler);
+  }, []);
 
-  const entradas        = useMemo(() => lancamentos.filter((l) => l.tipo === TIPO.ENTRADA),        [lancamentos]);
-  const saidasFixas     = useMemo(() => lancamentos.filter((l) => l.tipo === TIPO.SAIDA_FIXA),     [lancamentos]);
-  const saidasVariaveis = useMemo(() => lancamentos.filter((l) => l.tipo === TIPO.SAIDA_VARIAVEL), [lancamentos]);
+  const lancamentosMes = useMemo(() => lancamentos.filter((l) => {
+    const d = new Date(l.data_competencia || l.data_lancamento || l.dt_criacao);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+  }), [lancamentos, mesAtual, anoAtual]);
+
+  const entradas        = useMemo(() => lancamentosMes.filter((l) => l.tipo === TIPO.ENTRADA),        [lancamentosMes]);
+  const saidasFixas     = useMemo(() => lancamentosMes.filter((l) => l.tipo === TIPO.SAIDA_FIXA),     [lancamentosMes]);
+  const saidasVariaveis = useMemo(() => lancamentosMes.filter((l) => l.tipo === TIPO.SAIDA_VARIAVEL), [lancamentosMes]);
 
   const totalEntradas  = useMemo(() => entradas.reduce((s, i)        => s + Number(i.valor), 0), [entradas]);
   const totalFixas     = useMemo(() => saidasFixas.reduce((s, i)     => s + Number(i.valor), 0), [saidasFixas]);
@@ -367,13 +403,10 @@ export default function Home() {
   const saldo          = totalEntradas - totalSaidas;
   const pctSaude       = totalEntradas > 0 ? Math.round((saldo / totalEntradas) * 100) : 0;
 
-  // Cor dinâmica do box-shadow do card donut
   const pctSaldo = totalEntradas > 0 ? saldo / totalEntradas : 0;
-  const temDados = lancamentos.length > 0;
-  const corSaldo = !temDados
-    ? "transparent"
-    : saldo < 0
-    ?"#ff4d4d"
+  const temDados = lancamentosMes.length > 0;
+  const corSaldo = !temDados ? "transparent"
+    : saldo < 0 ? "#ff4d4d"
     : pctSaldo > 0.50 ? "#A2FF01"
     : pctSaldo > 0.25 ? "#ff9900"
     : "#ff4d4d";
@@ -393,7 +426,6 @@ export default function Home() {
     setApiError(null);
     try {
       await postLancamento(payload);
-      // Recarrega todos os lançamentos do banco para garantir categoria_nome via JOIN
       const atualizados = await fetchLancamentos();
       setLancamentos(atualizados);
     } catch (err) {
@@ -410,9 +442,7 @@ export default function Home() {
   };
 
   const handleDelete = async (id) => {
-    // Remove visualmente imediato
     setLancamentos((prev) => prev.filter((l) => (l.id_lancamento || l._localId) !== id));
-    // Se tem id real, persiste no banco
     if (typeof id === "number" || (typeof id === "string" && !id.includes("-"))) {
       try {
         await deleteLancamento(id);
@@ -469,13 +499,11 @@ export default function Home() {
 
       {/* ── Middle Row ── */}
       <div className="middle-grid">
-
-        <div
-          className="widget-card widget-card--donut"
+        <div className="widget-card widget-card--donut"
           style={{
-                boxShadow:   lancamentos.length > 0 ? `0 0 24px ${corSaldo}88` : "none",
-                borderColor: lancamentos.length > 0 ? `${corSaldo}99` : "#2a2a2a", }}
-        >
+            boxShadow:   temDados ? `0 0 24px ${corSaldo}88` : "none",
+            borderColor: temDados ? `${corSaldo}99` : "#2a2a2a",
+          }}>
           <div className="widget-card__label">COMPOSIÇÃO</div>
           <DonutChart entradas={totalEntradas} saidasFixas={totalFixas} saidasVariaveis={totalVariaveis} />
         </div>
@@ -554,17 +582,46 @@ export default function Home() {
           {entradas.map((item) => <TableRow key={item.id_lancamento || item._localId} item={item} tipo={TIPO.ENTRADA} onDelete={handleDelete} />)}
           <AddRow tipo={TIPO.ENTRADA} categorias={categorias} onAdd={handleAdd} saving={saving} />
         </TableCard>
-
         <TableCard title="Saídas Fixas" subtitle="DESPESAS RECORRENTES" total={totalFixas} tipo={TIPO.SAIDA_FIXA} loading={loading}>
           {saidasFixas.map((item) => <TableRow key={item.id_lancamento || item._localId} item={item} tipo={TIPO.SAIDA_FIXA} onDelete={handleDelete} />)}
           <AddRow tipo={TIPO.SAIDA_FIXA} categorias={categorias} onAdd={handleAdd} saving={saving} />
         </TableCard>
-
         <TableCard title="Saídas Variáveis" subtitle="DESPESAS EVENTUAIS" total={totalVariaveis} tipo={TIPO.SAIDA_VARIAVEL} loading={loading}>
           {saidasVariaveis.map((item) => <TableRow key={item.id_lancamento || item._localId} item={item} tipo={TIPO.SAIDA_VARIAVEL} onDelete={handleDelete} />)}
           <AddRow tipo={TIPO.SAIDA_VARIAVEL} categorias={categorias} onAdd={handleAdd} saving={saving} />
         </TableCard>
       </div>
+
+      {/* ── Modal Mobile — aberto via FAB da navbar ── */}
+      {modalMobile && (
+        <div className="mobile-modal-overlay" onClick={(e) => e.target === e.currentTarget && setModalMobile(false)}>
+          <div className="mobile-modal-sheet">
+            <div className="mobile-modal-drag" />
+            <div className="mobile-modal-header">
+              <span className="mobile-modal-title">Novo Lançamento</span>
+              <button className="mobile-modal-close" onClick={() => setModalMobile(false)}>✕</button>
+            </div>
+            <div className="mobile-modal-tipos">
+              {[TIPO.ENTRADA, TIPO.SAIDA_FIXA, TIPO.SAIDA_VARIAVEL].map((t) => (
+                <button key={t}
+                  className="mobile-modal-tipo-btn"
+                  style={modalTipo === t ? { color: COR[t], borderColor: COR[t], background: `${COR[t]}15` } : {}}
+                  onClick={() => setModalTipo(t)}
+                >
+                  {t === TIPO.ENTRADA ? "Entrada" : t === TIPO.SAIDA_FIXA ? "Saída Fixa" : "Saída Variável"}
+                </button>
+              ))}
+            </div>
+            <AddRowModal
+              tipo={modalTipo}
+              categorias={categorias}
+              saving={saving}
+              onAdd={async (payload) => { await handleAdd(payload); setModalMobile(false); }}
+              onClose={() => setModalMobile(false)}
+            />
+          </div>
+        </div>
+      )}
 
     </div>
   );

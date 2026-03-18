@@ -3,11 +3,12 @@
 ========================================= */
 .login-container {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   background: linear-gradient(135deg, #000000, #0C0C0C);
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 24px 16px;
 }
 
 /* =========================================
@@ -142,4 +143,56 @@
   50%  { transform: translateX(3px); }
   75%  { transform: translateX(-3px); }
   100% { transform: translateX(0); }
+}
+
+/* =========================================
+   RESPONSIVE — MOBILE
+========================================= */
+@media (max-width: 767px) {
+  /* Container ocupa tela inteira, centralizado */
+  .login-container {
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    min-height: 100vh;
+  }
+
+  /* Card ocupa largura total, sem bordas laterais */
+  .login-card {
+    padding: 32px 24px;
+    border-radius: 20px;
+    gap: 18px;
+    max-width: 100%;
+    width: 100%;
+    /* Sombra sutil para destacar do fundo */
+    box-shadow: 0 0 40px #00000088;
+  }
+
+  /* Logo maior e mais centralizada */
+  .login__logo {
+    max-width: 200px;
+    margin-bottom: 4px;
+  }
+
+  /* Tabs maiores para toque */
+  .auth-tabs button {
+    font-size: 15px;
+    padding: 14px;
+  }
+
+  /* Inputs com altura confortável */
+  .login-card input {
+    padding: 16px 14px;
+    font-size: 16px; /* evita zoom automático no iOS */
+    margin-bottom: 12px;
+    border-radius: 12px;
+  }
+
+  /* Botão de submit mais alto */
+  .submit-button {
+    padding: 16px;
+    font-size: 16px;
+    border-radius: 14px;
+    margin-top: 4px;
+  }
 }

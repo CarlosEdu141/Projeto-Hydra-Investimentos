@@ -484,12 +484,286 @@
   .kpi-grid    { grid-template-columns: repeat(3, 1fr); }
   .middle-grid { grid-template-columns: 1fr 1fr; }
   .widget-card--donut { display: none; }
-  .tables-grid { grid-template-columns: 1fr 1fr; }
+  .tables-grid        { grid-template-columns: 1fr 1fr; }
 }
 
-@media (max-width: 720px) {
-  .home-page   { padding: 16px; }
-  .kpi-grid    { grid-template-columns: 1fr 1fr; }
-  .middle-grid { grid-template-columns: 1fr; }
-  .tables-grid { grid-template-columns: 1fr; }
+@media (max-width: 767px) {
+  .home-page { padding: 14px 12px 100px; }
+
+  /* ── KPIs: 2x2 + Saldo Livre destaque ── */
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  /* Só Saldo Livre (5º) ocupa linha inteira — destaque */
+  .kpi-grid .kpi-card:nth-child(5) {
+    grid-column: span 2;
+    background: #1e1e1e;
+    border-radius: 14px;
+  }
+  .kpi-grid .kpi-card:nth-child(5) .kpi-card__value {
+    font-size: 22px;
+  }
+  .kpi-grid .kpi-card:nth-child(5) .kpi-card__label {
+    font-size: 9px;
+    letter-spacing: 2px;
+  }
+
+  .kpi-card        { padding: 14px; border-radius: 12px; }
+  .kpi-card__value { font-size: 15px; }
+  .kpi-card__label { font-size: 8px; }
+
+  /* ── Middle: coluna única, DONUT APARECE ── */
+  .middle-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* ── Donut: grande e centralizado no mobile ── */
+  .widget-card--donut { display: block !important; padding: 20px 16px; }
+
+  .donut-body {
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .donut-wrapper {
+    width: 220px;
+    height: 220px;
+    margin: 0 auto;
+  }
+
+  .donut-wrapper svg {
+    width: 220px;
+    height: 220px;
+  }
+
+  /* Legenda abaixo em lista vertical, igual ao app de referência */
+  .donut-legend {
+    width: 100%;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .donut-legend__item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #2a2a2a;
+    padding-bottom: 10px;
+  }
+
+  .donut-legend__item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .donut-legend__name {
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .donut-legend__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .donut-legend__val {
+    padding-left: 0;
+    font-size: 13px;
+  }
+
+  .widget-card      { border-radius: 12px; }
+  .table-card       { border-radius: 12px; }
+
+  /* ── Tabelas: coluna única ── */
+  .tables-grid { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Esconde AddRow inline — usa FAB */
+  .add-row-trigger,
+  .add-row-form { display: none; }
+}
+
+/* =========================================
+   FAB MOBILE
+========================================= */
+.fab-mobile {
+  position: fixed;
+  bottom: 78px;
+  right: 20px;
+  width: 52px;
+  height: 52px;
+  background: #A2FF01;
+  color: #000;
+  border: none;
+  border-radius: 50%;
+  font-size: 26px;
+  font-weight: bold;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  box-shadow: 0 0 20px #A2FF0166;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fab-mobile:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 28px #A2FF0188;
+}
+
+/* =========================================
+   MODAL MOBILE
+========================================= */
+.mobile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000000bb;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.mobile-modal-sheet {
+  background: #1e1e1e;
+  border-radius: 20px 20px 0 0;
+  padding: 16px 16px 40px;
+  width: 100%;
+  max-width: 520px;
+  animation: slideUpSheet 0.25s ease;
+}
+
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.mobile-modal-drag {
+  width: 36px;
+  height: 4px;
+  background: #333;
+  border-radius: 4px;
+  margin: 0 auto 16px;
+}
+
+.mobile-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.mobile-modal-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.mobile-modal-close {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+.mobile-modal-close:hover { color: #ff4d4d; }
+
+.mobile-modal-tipos {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.mobile-modal-tipo-btn {
+  flex: 1;
+  padding: 8px 4px;
+  background: none;
+  border: 1px solid #2a2a2a;
+  color: #555;
+  border-radius: 8px;
+  font-size: 11px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.mobile-modal-fields { display: flex; flex-direction: column; gap: 12px; }
+
+.mobile-modal-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mobile-modal-field { display: flex; flex-direction: column; gap: 5px; }
+
+.mobile-modal-label {
+  font-size: 9px;
+  color: #555;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.mobile-modal-input {
+  background: #262626;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #ccc;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s ease;
+}
+
+.mobile-modal-input option { background: #1e1e1e; }
+
+.mobile-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.mobile-modal-btn-cancel {
+  flex: 1;
+  background: none;
+  border: 1px solid #333;
+  color: #666;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.mobile-modal-btn-cancel:hover { border-color: #555; color: #aaa; }
+
+.mobile-modal-btn-save {
+  flex: 2;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: bold;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+.mobile-modal-btn-save:hover   { filter: brightness(1.2); }
+.mobile-modal-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Donut center: fonte maior no mobile ── */
+@media (max-width: 767px) {
+  .donut-center__label { font-size: 11px; letter-spacing: 2px; }
+  .donut-center__value { font-size: 16px !important; max-width: 120px; }
 }

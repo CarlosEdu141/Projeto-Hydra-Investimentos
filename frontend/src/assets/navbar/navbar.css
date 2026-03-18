@@ -1,5 +1,5 @@
 /* =========================================
-   NAVBAR
+   NAVBAR — DESKTOP
 ========================================= */
 .navbar {
   width: 100%;
@@ -20,6 +20,7 @@
 .navbar__brand {
   display: flex;
   align-items: center;
+  gap: 8px;
   flex-shrink: 0;
   padding-left: 25px;
 }
@@ -43,7 +44,6 @@
 
 /* ── Links ── */
 .navbar__links {
-  display: flex;
   align-items: center;
   gap: 4px;
   position: absolute;
@@ -88,7 +88,6 @@
 
 /* ── Usuário ── */
 .navbar__user {
-  display: flex;
   align-items: center;
   gap: 14px;
   flex-shrink: 0;
@@ -114,4 +113,98 @@
   font-family: Arial, Helvetica, sans-serif;
   cursor: pointer;
   transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+/* =========================================
+   BOTTOM NAV — MOBILE
+========================================= */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 64px;
+  background: #1a1a1a;
+  border-top: 1px solid #2a2a2a;
+  z-index: 100;
+  justify-content: space-around;
+  align-items: center;
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 0 4px;
+}
+
+.bottom-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  height: 100%;
+  text-decoration: none;
+  color: #555;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.bottom-nav__item:hover { color: #aaa; }
+.bottom-nav__item--active { color: #A2FF01; }
+
+.bottom-nav__icon  { font-size: 18px; line-height: 1; }
+.bottom-nav__label { font-size: 9px; letter-spacing: 0.8px; text-transform: uppercase; }
+
+/* ── FAB centralizado ── */
+.bottom-nav__fab-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.bottom-nav__fab {
+  width: 52px;
+  height: 52px;
+  background: #A2FF01;
+  color: #000;
+  border: none;
+  border-radius: 50%;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  bottom: 8px;
+  box-shadow: 0 0 20px #A2FF0166;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  line-height: 1;
+}
+
+.bottom-nav__fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 28px #A2FF0188;
+}
+
+.bottom-nav__logout {
+  color: #555;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.bottom-nav__logout:hover { color: #aaa; }
+
+/* =========================================
+   AJUSTE DE PADDING NAS PÁGINAS NO MOBILE
+   Evita que o conteúdo fique atrás do bottom nav
+========================================= */
+@media (max-width: 767px) {
+  .home-page,
+  .historico-page,
+  .invest-page {
+    padding-bottom: 80px;
+  }
 }
