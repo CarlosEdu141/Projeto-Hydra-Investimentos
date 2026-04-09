@@ -29,9 +29,16 @@
 /* =========================================
    Logo dentro do card
 ========================================= */
-.login__logo {
-  width: 100%;
-  max-width: 300px;
+.login__logo-icon {
+  width: 200px;
+  height: auto;
+  display: block;
+  margin: 0 auto 12px;
+  object-fit: contain;
+}
+
+.login__logo-text {
+  width: 150px;
   height: auto;
   display: block;
   margin: 0 auto;

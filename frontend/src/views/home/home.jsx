@@ -388,7 +388,7 @@ export default function Home() {
   }, []);
 
   const lancamentosMes = useMemo(() => lancamentos.filter((l) => {
-    const d = new Date(l.data_competencia || l.data_lancamento || l.dt_criacao);
+    const d = new Date(l.dt_criacao || l.data_lancamento || l.dt_criacao);
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
   }), [lancamentos, mesAtual, anoAtual]);
 

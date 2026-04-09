@@ -676,3 +676,26 @@
   transform: scale(1.08);
   box-shadow: 0 0 28px #A2FF0188;
 }
+
+/* ── Botão exportar PDF ── */
+.btn-exportar-pdf {
+  align-items: center;
+  gap: 6px;
+  background: #ff4d4d15;
+  border: 1px solid #ff4d4d55;
+  color: #ff4d4d;
+  border-radius: 10px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-exportar-pdf:hover {
+  background: #ff4d4d25;
+  border-color: #ff4d4d;
+  box-shadow: 0 0 12px #ff4d4d33;
+}

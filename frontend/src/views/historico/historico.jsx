@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer
@@ -94,7 +96,7 @@ function GraficoComparativo({ lancamentos }) {
       const ano = d.getFullYear();
 
       const doMes = lancamentos.filter((l) => {
-        const ld = new Date(l.data_competencia || l.dt_criacao);
+        const ld = new Date(l.dt_criacao || l.dt_criacao);
         return ld.getMonth() === mes && ld.getFullYear() === ano;
       });
 
@@ -309,7 +311,7 @@ export default function Historico() {
 
   const anosDisponiveis = useMemo(() => {
     const anos = new Set(lancamentos.map(l => {
-      const d = new Date(l.data_competencia || l.dt_criacao);
+      const d = new Date(l.dt_criacao || l.dt_criacao);
       return String(d.getFullYear());
     }));
     return ["TODOS", ...Array.from(anos).sort((a, b) => b - a)];
@@ -348,17 +350,136 @@ export default function Historico() {
         const matchBusca = busca === "" ||
           (l.categoria_nome || "").toLowerCase().includes(busca.toLowerCase()) ||
           (l.descricao      || "").toLowerCase().includes(busca.toLowerCase());
-        const d = new Date(l.data_competencia || l.dt_criacao);
+        const d = new Date(l.dt_criacao || l.dt_criacao);
         const matchMes = mesFiltro === "TODOS" || d.getMonth() === Number(mesFiltro);
         const matchAno = anoFiltro === "TODOS" || d.getFullYear() === Number(anoFiltro);
         return matchTipo && matchBusca && matchMes && matchAno;
       })
       .sort((a, b) => {
-        const dA = new Date(a.data_competencia || a.dt_criacao);
-        const dB = new Date(b.data_competencia || b.dt_criacao);
+        const dA = new Date(a.dt_criacao || a.dt_criacao);
+        const dB = new Date(b.dt_criacao || b.dt_criacao);
         return ordemData === "desc" ? dB - dA : dA - dB;
       });
   }, [lancamentos, filtroTipo, busca, mesFiltro, anoFiltro, ordemData]);
+
+  // ── Gerar PDF ──────────────────────────────────────────────────────────────
+  const gerarPDF = () => {
+    const doc = new jsPDF();
+    const nomeUsuario = sessionStorage.getItem("nome") || "Usuário";
+    const agora = new Date().toLocaleDateString("pt-BR");
+
+    // Título e cabeçalho
+    doc.setFillColor(26, 26, 26);
+    doc.rect(0, 0, 210, 40, "F");
+    doc.setTextColor(162, 255, 1);
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("HYDRA Finanças", 14, 18);
+    doc.setFontSize(10);
+    doc.setTextColor(180, 180, 180);
+    doc.setFont("helvetica", "normal");
+    doc.text("Extrato de Lançamentos", 14, 27);
+    doc.text(`Gerado em ${agora} por ${nomeUsuario}`, 14, 34);
+
+    // Filtro aplicado
+    const mesTxt  = mesFiltro  === "TODOS" ? "Todos os meses" : NOMES_MES_FILTRO.find(m => m.value === mesFiltro)?.label || mesFiltro;
+    const anoTxt  = anoFiltro  === "TODOS" ? "Todos os anos"  : anoFiltro;
+    const tipoTxt = filtroTipo === "TODOS" ? "Todos os tipos" : LABEL_TIPO[filtroTipo] || filtroTipo;
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(9);
+    doc.text(`Período: ${mesTxt} / ${anoTxt}  |  Tipo: ${tipoTxt}  |  ${filtrados.length} registro(s)`, 14, 46);
+
+    // Totais por tipo
+    const totalEntradas  = filtrados.filter(l => l.tipo === "ENTRADA")       .reduce((s, l) => s + Number(l.valor), 0);
+    const totalFixas     = filtrados.filter(l => l.tipo === "SAIDA_FIXA")    .reduce((s, l) => s + Number(l.valor), 0);
+    const totalVariaveis = filtrados.filter(l => l.tipo === "SAIDA_VARIAVEL").reduce((s, l) => s + Number(l.valor), 0);
+    const totalSaidas    = totalFixas + totalVariaveis;
+    const saldo          = totalEntradas - totalSaidas;
+
+    // Cards de resumo
+    const cards = [
+      { label: "Entradas",       valor: totalEntradas,  cor: [162, 255, 1]   },
+      { label: "Saídas Fixas",   valor: totalFixas,     cor: [255, 77, 77]   },
+      { label: "Saídas Variáv.", valor: totalVariaveis, cor: [255, 153, 0]   },
+      { label: "Saldo",          valor: saldo,          cor: saldo >= 0 ? [162, 255, 1] : [255, 77, 77] },
+    ];
+    const cardW = 43, cardH = 18, startX = 14, startY = 52, gap = 4;
+    cards.forEach((card, i) => {
+      const x = startX + i * (cardW + gap);
+      doc.setFillColor(38, 38, 38);
+      doc.roundedRect(x, startY, cardW, cardH, 2, 2, "F");
+      doc.setTextColor(...card.cor);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.text(card.label, x + 4, startY + 6);
+      doc.setFontSize(9);
+      doc.text(formatBRL(card.valor), x + 4, startY + 13);
+    });
+
+    // Linha divisória
+    doc.setDrawColor(42, 42, 42);
+    doc.line(14, 76, 196, 76);
+
+    // Tabela de lançamentos
+    autoTable(doc, {
+      startY: 80,
+      head: [["Data", "Tipo", "Categoria", "Descrição", "Status", "Valor"]],
+      body: filtrados.map(l => [
+        formatData(l.dt_criacao),
+        LABEL_TIPO[l.tipo] || l.tipo,
+        l.categoria_nome || "—",
+        l.descricao || "—",
+        l.status || "—",
+        `${l.tipo === "ENTRADA" ? "+" : "-"}${formatBRL(l.valor)}`,
+      ]),
+      styles: {
+        font: "helvetica",
+        fontSize: 8,
+        textColor: [200, 200, 200],
+        fillColor: [38, 38, 38],
+        lineColor: [42, 42, 42],
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: [26, 26, 26],
+        textColor: [100, 100, 100],
+        fontStyle: "bold",
+        fontSize: 7,
+      },
+      alternateRowStyles: { fillColor: [30, 30, 30] },
+      columnStyles: {
+        0: { cellWidth: 22 },
+        1: { cellWidth: 26 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 50 },
+        4: { cellWidth: 22 },
+        5: { cellWidth: 30, halign: "right" },
+      },
+      didDrawCell: (data) => {
+        // Colore o valor conforme tipo
+        if (data.section === "body" && data.column.index === 5) {
+          const tipo = filtrados[data.row.index]?.tipo;
+          const cor = tipo === "ENTRADA" ? [162, 255, 1] : tipo === "SAIDA_FIXA" ? [255, 77, 77] : [255, 153, 0];
+          data.doc.setTextColor(...cor);
+        }
+      },
+    });
+
+    // Rodapé
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`HYDRA Finanças — Extrato gerado em ${agora}`, 14, 290);
+      doc.text(`Página ${i} de ${totalPages}`, 185, 290, { align: "right" });
+    }
+
+    // Nome do arquivo
+    const mesArq  = mesFiltro  === "TODOS" ? "todos" : (NOMES_MES_FILTRO.find(m => m.value === mesFiltro)?.label || mesFiltro);
+    const anoArq  = anoFiltro  === "TODOS" ? "todos" : anoFiltro;
+    doc.save(`extrato_hydra_${mesArq}_${anoArq}.pdf`);
+  };
 
   return (
     <div className="historico-page">
@@ -377,6 +498,9 @@ export default function Historico() {
           <span className="historico-count">{filtrados.length} registro{filtrados.length !== 1 ? "s" : ""}</span>
           <button className="btn-novo-lancamento d-none d-md-block" onClick={() => setModalAberto(true)}>
             + Novo Lançamento
+          </button>
+          <button className="btn-exportar-pdf d-none d-md-flex" onClick={gerarPDF} title="Exportar extrato em PDF">
+            ↓ PDF
           </button>
         </div>
       </div>
@@ -438,7 +562,7 @@ export default function Historico() {
                 const prefix = l.tipo === "ENTRADA" ? "+" : "-";
                 return (
                   <tr key={l.id_lancamento} className="historico-row">
-                    <td className="col-data">{formatData(l.data_competencia)}</td>
+                    <td className="col-data">{formatData(l.dt_criacao)}</td>
                     {/* Desktop */}
                     <td className="d-none d-md-table-cell">
                       <span className="tipo-badge" style={{ color: cor, background: `${cor}15`, border: `1px solid ${cor}33` }}>

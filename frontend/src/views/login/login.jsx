@@ -108,7 +108,8 @@ export default function Auth() {
     <div className="login-container">
       <div className="login-card">
 
-        <img src="/img/logoComTexto.jpg" alt="Hydra Investimentos" className="login__logo" />
+        <img src="/img/LogoHydra.png" alt="Hydra" className="login__logo-icon" />
+        <img src="/img/TextoHydra.png" alt="Hydra Investimentos" className="login__logo-text" />
 
         <div className="auth-tabs">
           <button type="button" className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>
