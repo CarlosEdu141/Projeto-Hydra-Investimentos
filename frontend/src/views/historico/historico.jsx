@@ -96,7 +96,7 @@ function GraficoComparativo({ lancamentos }) {
       const ano = d.getFullYear();
 
       const doMes = lancamentos.filter((l) => {
-        const ld = new Date(l.dt_criacao || l.dt_criacao);
+        const ld = new Date(l.data_competencia || l.dt_criacao);
         return ld.getMonth() === mes && ld.getFullYear() === ano;
       });
 
@@ -311,7 +311,7 @@ export default function Historico() {
 
   const anosDisponiveis = useMemo(() => {
     const anos = new Set(lancamentos.map(l => {
-      const d = new Date(l.dt_criacao || l.dt_criacao);
+      const d = new Date(l.data_competencia || l.dt_criacao);
       return String(d.getFullYear());
     }));
     return ["TODOS", ...Array.from(anos).sort((a, b) => b - a)];
@@ -350,14 +350,14 @@ export default function Historico() {
         const matchBusca = busca === "" ||
           (l.categoria_nome || "").toLowerCase().includes(busca.toLowerCase()) ||
           (l.descricao      || "").toLowerCase().includes(busca.toLowerCase());
-        const d = new Date(l.dt_criacao || l.dt_criacao);
+        const d = new Date(l.data_competencia || l.dt_criacao);
         const matchMes = mesFiltro === "TODOS" || d.getMonth() === Number(mesFiltro);
         const matchAno = anoFiltro === "TODOS" || d.getFullYear() === Number(anoFiltro);
         return matchTipo && matchBusca && matchMes && matchAno;
       })
       .sort((a, b) => {
-        const dA = new Date(a.dt_criacao || a.dt_criacao);
-        const dB = new Date(b.dt_criacao || b.dt_criacao);
+        const dA = new Date(a.data_competencia || a.dt_criacao);
+        const dB = new Date(b.data_competencia || b.dt_criacao);
         return ordemData === "desc" ? dB - dA : dA - dB;
       });
   }, [lancamentos, filtroTipo, busca, mesFiltro, anoFiltro, ordemData]);
@@ -425,7 +425,7 @@ export default function Historico() {
       startY: 80,
       head: [["Data", "Tipo", "Categoria", "Descrição", "Status", "Valor"]],
       body: filtrados.map(l => [
-        formatData(l.dt_criacao),
+        formatData(l.data_competencia),
         LABEL_TIPO[l.tipo] || l.tipo,
         l.categoria_nome || "—",
         l.descricao || "—",
@@ -562,7 +562,7 @@ export default function Historico() {
                 const prefix = l.tipo === "ENTRADA" ? "+" : "-";
                 return (
                   <tr key={l.id_lancamento} className="historico-row">
-                    <td className="col-data">{formatData(l.dt_criacao)}</td>
+                    <td className="col-data">{formatData(l.data_competencia)}</td>
                     {/* Desktop */}
                     <td className="d-none d-md-table-cell">
                       <span className="tipo-badge" style={{ color: cor, background: `${cor}15`, border: `1px solid ${cor}33` }}>

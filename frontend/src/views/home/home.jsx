@@ -101,36 +101,78 @@ function KpiCard({ label, value, color, icon, sub, isNegative }) {
 
 // ── DonutChart ────────────────────────────────────────────────────────────────
 function DonutChart({ entradas, saidasFixas, saidasVariaveis }) {
-  const total = entradas + saidasFixas + saidasVariaveis;
-  const saldo = entradas - saidasFixas - saidasVariaveis;
-  if (total === 0) return <div className="donut-empty">Adicione dados</div>;
+  const totalSaidas = saidasFixas + saidasVariaveis;
+  const saldo       = entradas - totalSaidas;
+
+  if (entradas === 0 && totalSaidas === 0)
+    return <div className="donut-empty">Adicione dados</div>;
+
   const cx = 105, cy = 105, r = 78;
   const circ = 2 * Math.PI * r;
-  const dE = (entradas        / total) * circ;
-  const dF = (saidasFixas     / total) * circ;
-  const dV = (saidasVariaveis / total) * circ;
+
+  // Cada fatia proporcional às entradas (base = entradas)
+  // Se saídas > entradas, limitamos a 100% do anel
+  const base = entradas > 0 ? entradas : totalSaidas;
+
+  const arcFixas     = Math.min((saidasFixas     / base), 1) * circ;
+  const arcVariaveis = Math.min((saidasVariaveis / base), Math.max(0, 1 - saidasFixas / base)) * circ;
+  const arcSaldo     = saldo > 0 ? (saldo / base) * circ : 0;
+
+  // Offsets: fixas começa no topo, variáveis depois, saldo por último
+  const offsetFixas     = 0;
+  const offsetVariaveis = -(arcFixas);
+  const offsetSaldo     = -(arcFixas + arcVariaveis);
+
+  // Cor do arco e texto do saldo: verde quando positivo, vermelho quando negativo.
+  // A variação por saúde (laranja/vermelho) fica apenas no box-shadow externo da card.
+  const corSaldo = saldo >= 0 ? "#A2FF01" : "#ff4d4d";
+
   const abs = Math.abs(saldo);
   const fs  = abs >= 10_000_000 ? 7 : abs >= 1_000_000 ? 8 : abs >= 100_000 ? 9 : abs >= 10_000 ? 10 : 12;
+  const pctSaude = entradas > 0 ? Math.round((saldo / entradas) * 100) : 0;
+
   return (
     <div className="donut-body">
       <div className="donut-wrapper">
         <svg width="100%" height="100%" viewBox="0 0 210 210" style={{ display: "block" }}>
+          {/* Fundo */}
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="#1a1a1a" strokeWidth="28" />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={COR[TIPO.ENTRADA]} strokeWidth="28"
-            strokeDasharray={`${dE} ${circ - dE}`} strokeDashoffset="0" strokeLinecap="butt"
-            transform={`rotate(-90 ${cx} ${cy})`} style={{ transition: "stroke-dasharray 0.6s ease" }} />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={COR[TIPO.SAIDA_FIXA]} strokeWidth="28"
-            strokeDasharray={`${dF} ${circ - dF}`} strokeDashoffset={-dE} strokeLinecap="butt"
-            transform={`rotate(-90 ${cx} ${cy})`} style={{ transition: "stroke-dasharray 0.6s ease" }} />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={COR[TIPO.SAIDA_VARIAVEL]} strokeWidth="28"
-            strokeDasharray={`${dV} ${circ - dV}`} strokeDashoffset={-(dE + dF)} strokeLinecap="butt"
-            transform={`rotate(-90 ${cx} ${cy})`} style={{ transition: "stroke-dasharray 0.6s ease" }} />
+
+          {/* Saídas Fixas — vermelho */}
+          {arcFixas > 0 && (
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#ff4d4d" strokeWidth="28"
+              strokeDasharray={`${arcFixas} ${circ - arcFixas}`}
+              strokeDashoffset={offsetFixas}
+              strokeLinecap="butt"
+              transform={`rotate(-90 ${cx} ${cy})`}
+              style={{ transition: "stroke-dasharray 0.6s ease" }} />
+          )}
+
+          {/* Saídas Variáveis — laranja */}
+          {arcVariaveis > 0 && (
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#ff9900" strokeWidth="28"
+              strokeDasharray={`${arcVariaveis} ${circ - arcVariaveis}`}
+              strokeDashoffset={offsetVariaveis}
+              strokeLinecap="butt"
+              transform={`rotate(-90 ${cx} ${cy})`}
+              style={{ transition: "stroke-dasharray 0.6s ease" }} />
+          )}
+
+          {/* Saldo restante — sempre verde se positivo, vermelho se negativo */}
+          {arcSaldo > 0 && (
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke={corSaldo} strokeWidth="28"
+              strokeDasharray={`${arcSaldo} ${circ - arcSaldo}`}
+              strokeDashoffset={offsetSaldo}
+              strokeLinecap="butt"
+              transform={`rotate(-90 ${cx} ${cy})`}
+              style={{ transition: "stroke-dasharray 0.6s ease" }} />
+          )}
         </svg>
         <div className="donut-center">
           <span className="donut-center__label">SALDO</span>
           <span
             className={`donut-center__value${saldo < 0 ? " negative" : ""}`}
-            style={{ fontSize: `${fs}px`, color: saldo >= 0 ? COR.SALDO_POS : COR.SALDO_NEG }}
+            style={{ fontSize: `${fs}px`, color: saldo >= 0 ? corSaldo : COR.SALDO_NEG }}
           >
             {formatBRL(saldo)}
           </span>
@@ -138,14 +180,19 @@ function DonutChart({ entradas, saidasFixas, saidasVariaveis }) {
       </div>
       <div className="donut-legend">
         {[
-          ["Entradas",  COR[TIPO.ENTRADA],        entradas],
-          ["Fixas",     COR[TIPO.SAIDA_FIXA],     saidasFixas],
-          ["Variáveis", COR[TIPO.SAIDA_VARIAVEL], saidasVariaveis],
-        ].map(([name, color, val]) => (
+          ["Fixas",      "#ff4d4d",          saidasFixas,     null],
+          ["Variáveis",  "#ff9900",          saidasVariaveis, null],
+          ["Saldo",      corSaldo,           saldo,           `${pctSaude}%`],
+        ].map(([name, color, val, badge]) => (
           <div key={name} className="donut-legend__item">
             <div className="donut-legend__name">
               <div className="donut-legend__dot" style={{ background: color }} />
               {name}
+              {badge && (
+                <span style={{ fontSize: "9px", background: `${color}20`, color, border: `1px solid ${color}44`, borderRadius: "4px", padding: "1px 5px", marginLeft: "4px" }}>
+                  {badge}
+                </span>
+              )}
             </div>
             <span className="donut-legend__val" style={{ color }}>{formatBRL(val)}</span>
           </div>
@@ -388,7 +435,7 @@ export default function Home() {
   }, []);
 
   const lancamentosMes = useMemo(() => lancamentos.filter((l) => {
-    const d = new Date(l.dt_criacao || l.data_lancamento || l.dt_criacao);
+    const d = new Date(l.data_competencia || l.dt_criacao);
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
   }), [lancamentos, mesAtual, anoAtual]);
 
