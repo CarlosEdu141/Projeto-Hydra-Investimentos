@@ -1,10 +1,15 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { useRef, useEffect } from "react";
 import "./navbar.css";
 
 export default function Navbar() {
   const navigate     = useNavigate();
+  const location     = useLocation();
   const nome         = sessionStorage.getItem("nome") || "Usuário";
+  const navRef       = useRef(null);
+  const indicatorRef = useRef(null);
   const primeiroNome = nome.split(" ")[0];
+  const inicial      = nome.charAt(0).toUpperCase();
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -15,6 +20,23 @@ export default function Navbar() {
   const handleFab = () => {
     window.dispatchEvent(new CustomEvent("openLancamentoModal"));
   };
+
+  useEffect(() => {
+    const nav = navRef.current;
+    const indicator = indicatorRef.current;
+    if (!nav || !indicator) return;
+
+    const activeItem = nav.querySelector(".bottom-nav__item--active");
+    if (activeItem) {
+      const navRect  = nav.getBoundingClientRect();
+      const itemRect = activeItem.getBoundingClientRect();
+      indicator.style.left    = `${itemRect.left - navRect.left}px`;
+      indicator.style.width   = `${itemRect.width}px`;
+      indicator.style.opacity = "1";
+    } else {
+      indicator.style.opacity = "0";
+    }
+  }, [location.pathname]);
 
   const links = [
     { to: "/home",          label: "Home",          icon: "⬡" },
@@ -47,9 +69,17 @@ export default function Navbar() {
         </div>
 
         <div className="navbar__user d-none d-md-flex">
-          <span className="navbar__user-name">
-            Olá, <strong>{primeiroNome}</strong>
-          </span>
+          <NavLink
+            to="/perfil"
+            className={({ isActive }) =>
+              `navbar__user-link${isActive ? " navbar__user-link--active" : ""}`
+            }
+          >
+            <div className="navbar__avatar">{inicial}</div>
+            <span className="navbar__user-name">
+              Olá, <strong>{primeiroNome}</strong>
+            </span>
+          </NavLink>
           <button
             className="navbar__logout"
             onClick={handleLogout}
@@ -62,7 +92,8 @@ export default function Navbar() {
       </nav>
 
       {/* ── Bottom nav mobile ── */}
-      <nav className="bottom-nav d-flex d-md-none">
+      <nav className="bottom-nav d-flex d-md-none" ref={navRef}>
+        <div className="bottom-nav__indicator" ref={indicatorRef} />
         {/* Link Home */}
         <NavLink to="/home"
           className={({ isActive }) =>
@@ -100,11 +131,15 @@ export default function Navbar() {
           <span className="bottom-nav__label">Investimentos</span>
         </NavLink>
 
-        {/* Perfil (placeholder) */}
-        <button className="bottom-nav__item bottom-nav__logout">
+        {/* Link Perfil */}
+        <NavLink to="/perfil"
+          className={({ isActive }) =>
+            `bottom-nav__item${isActive ? " bottom-nav__item--active" : ""}`
+          }
+        >
           <span className="bottom-nav__icon">◉</span>
           <span className="bottom-nav__label">Perfil</span>
-        </button>
+        </NavLink>
       </nav>
     </>
   );

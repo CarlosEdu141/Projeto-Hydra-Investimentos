@@ -1,0 +1,333 @@
+/* =========================================
+   PAGE
+========================================= */
+.perfil-page {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #000000, #0C0C0C);
+  font-family: Arial, Helvetica, sans-serif;
+  color: #ffffff;
+  padding: 28px 32px 60px;
+}
+
+/* ── Grid desktop ── */
+.perfil-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.perfil-col {
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .perfil-grid {
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 28px;
+    align-items: start;
+  }
+}
+
+/* =========================================
+   HEADER
+========================================= */
+.perfil-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 18px;
+  padding: 22px 20px;
+  margin-bottom: 28px;
+  transition: border-color 0.3s ease;
+}
+
+.perfil-header:hover { border-color: #A2FF0133; }
+
+.perfil-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #A2FF0115;
+  border: 2px solid #A2FF0155;
+  box-shadow: 0 0 18px #A2FF0133;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.perfil-avatar__inicial {
+  font-size: 24px;
+  font-weight: bold;
+  color: #A2FF01;
+  line-height: 1;
+}
+
+.perfil-header__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.perfil-header__nome {
+  font-size: 17px;
+  font-weight: bold;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perfil-header__email {
+  font-size: 12px;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================================
+   SECTIONS
+========================================= */
+.perfil-section {
+  margin-bottom: 24px;
+}
+
+.perfil-section__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.perfil-section__title {
+  display: block;
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.perfil-section__header .perfil-section__title { margin-bottom: 0; }
+
+.perfil-section__badge {
+  font-size: 9px;
+  color: #A2FF01;
+  background: #A2FF0115;
+  border: 1px solid #A2FF0133;
+  border-radius: 20px;
+  padding: 2px 8px;
+  letter-spacing: 0.5px;
+}
+
+.perfil-section__desc {
+  font-size: 11px;
+  color: #555;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+/* =========================================
+   CARD
+========================================= */
+.perfil-card {
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.perfil-divider {
+  height: 1px;
+  background: #2a2a2a;
+  margin: 0 16px;
+}
+
+/* =========================================
+   MENU ITEM
+========================================= */
+.perfil-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ccc;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  text-align: left;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.perfil-item:hover { background: #262626; color: #fff; }
+
+.perfil-item--danger { color: #ff4d4d; }
+.perfil-item--danger:hover { background: #ff4d4d0e; color: #ff4d4d; }
+
+.perfil-item__icon {
+  font-size: 15px;
+  color: #555;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.perfil-item--danger .perfil-item__icon { color: #ff4d4d88; }
+
+.perfil-item__label { flex: 1; }
+
+.perfil-item__arrow {
+  font-size: 18px;
+  color: #444;
+  line-height: 1;
+}
+
+/* =========================================
+   BANK ITEM
+========================================= */
+.bank-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  transition: background 0.2s ease;
+}
+
+.bank-item:hover { background: #262626; }
+
+.bank-item__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bank-item__logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+  transition: box-shadow 0.3s ease;
+}
+
+.bank-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bank-item__name {
+  font-size: 13px;
+  color: #ddd;
+}
+
+.bank-item__status {
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease;
+}
+
+.bank-item__btn {
+  font-size: 11px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: filter 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bank-item__btn:hover  { filter: brightness(1.2); }
+.bank-item__btn:active { transform: scale(0.96); }
+
+/* =========================================
+   LOGOUT
+========================================= */
+.perfil-logout {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px;
+  background: #ff4d4d10;
+  border: 1px solid #ff4d4d44;
+  border-radius: 14px;
+  color: #ff4d4d;
+  font-size: 14px;
+  font-weight: bold;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  letter-spacing: 0.3px;
+}
+
+.perfil-logout:hover {
+  background: #ff4d4d1a;
+  border-color: #ff4d4d88;
+  box-shadow: 0 0 16px #ff4d4d22;
+}
+
+/* =========================================
+   RESPONSIVE — DESKTOP (ajustes de escala)
+========================================= */
+@media (min-width: 768px) {
+  .perfil-header {
+    padding: 28px 28px;
+    margin-bottom: 32px;
+  }
+
+  .perfil-avatar {
+    width: 68px;
+    height: 68px;
+  }
+
+  .perfil-avatar__inicial { font-size: 28px; }
+
+  .perfil-header__nome  { font-size: 20px; }
+  .perfil-header__email { font-size: 13px; }
+}
+
+/* =========================================
+   RESPONSIVE — MOBILE
+========================================= */
+@media (max-width: 767px) {
+  .perfil-page {
+    padding: 16px 14px 100px;
+  }
+
+  .perfil-header {
+    padding: 18px 16px;
+    margin-bottom: 20px;
+  }
+
+  .perfil-avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .perfil-avatar__inicial { font-size: 20px; }
+
+  .perfil-header__nome  { font-size: 15px; }
+  .perfil-header__email { font-size: 11px; }
+
+  .perfil-section { margin-bottom: 18px; }
+
+  .perfil-item      { padding: 13px 14px; font-size: 13px; }
+  .bank-item        { padding: 12px 14px; }
+  .bank-item__logo  { width: 34px; height: 34px; font-size: 10px; }
+  .bank-item__name  { font-size: 13px; }
+  .bank-item__btn   { font-size: 10px; padding: 5px 11px; }
+}

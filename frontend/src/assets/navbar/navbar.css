@@ -94,6 +94,52 @@
   padding-right: 25px;
 }
 
+.navbar__user-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  padding: 5px 10px 5px 5px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.navbar__user-link:hover {
+  background: #2a2a2a;
+  border-color: #333;
+}
+
+.navbar__user-link--active {
+  border-color: #A2FF0133;
+  background: #A2FF0108;
+}
+
+.navbar__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #A2FF0115;
+  border: 1.5px solid #A2FF0155;
+  box-shadow: 0 0 8px #A2FF0133;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: #A2FF01;
+  flex-shrink: 0;
+  transition: box-shadow 0.2s ease;
+}
+
+.navbar__user-link:hover .navbar__avatar {
+  box-shadow: 0 0 14px #A2FF0155;
+}
+
+.navbar__user-link--active .navbar__avatar {
+  box-shadow: 0 0 14px #A2FF0177;
+}
+
 .navbar__user-name {
   font-size: 13px;
   color: #888;
@@ -146,16 +192,36 @@
   background: none;
   border: none;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: color 0.25s ease, text-shadow 0.25s ease;
   padding: 0;
   font-family: Arial, Helvetica, sans-serif;
 }
 
 .bottom-nav__item:hover { color: #aaa; }
-.bottom-nav__item--active { color: #A2FF01; }
+
+.bottom-nav__item--active {
+  color: #A2FF01;
+  text-shadow: 0 0 8px #A2FF0199;
+}
 
 .bottom-nav__icon  { font-size: 18px; line-height: 1; }
 .bottom-nav__label { font-size: 9px; letter-spacing: 0.8px; text-transform: uppercase; }
+
+/* ── Indicador deslizante ── */
+.bottom-nav__indicator {
+  position: absolute;
+  top: 0;
+  height: 2px;
+  background: #A2FF01;
+  box-shadow: 0 0 8px #A2FF01, 0 0 18px #A2FF0177;
+  border-radius: 0 0 3px 3px;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    left    0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    width   0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.25s ease;
+}
 
 /* ── FAB centralizado ── */
 .bottom-nav__fab-wrap {
@@ -180,7 +246,7 @@
   align-items: center;
   justify-content: center;
   position: absolute;
-  bottom: 8px;
+  bottom: -5px;
   box-shadow: 0 0 20px #A2FF0166;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   line-height: 1;
@@ -204,7 +270,8 @@
 @media (max-width: 767px) {
   .home-page,
   .historico-page,
-  .invest-page {
+  .invest-page,
+  .perfil-page {
     padding-bottom: 80px;
   }
 }

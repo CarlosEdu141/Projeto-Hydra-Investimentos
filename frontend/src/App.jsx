@@ -4,6 +4,7 @@ import Login         from "./views/login/login";
 import Home          from "./views/home/home";
 import Historico     from "./views/historico/historico";
 import Investimentos from "./views/investimentos/investimentos";
+import Perfil        from "./views/perfil/perfil";
 
 // Layout que exibe a navbar apenas em páginas autenticadas
 function Layout() {
@@ -19,6 +20,7 @@ function Layout() {
         <Route path="/home"          element={<Home />} />
         <Route path="/historico"     element={<Historico />} />
         <Route path="/investimentos" element={<Investimentos />} />
+        <Route path="/perfil"        element={<Perfil />} />
       </Routes>
     </>
   );
