@@ -1,33 +1,83 @@
 /* =========================================
-   CONTAINER PRINCIPAL (FUNDO DA TELA)
+   CONTAINER PRINCIPAL — fundo com blobs
 ========================================= */
 .login-container {
   width: 100%;
   min-height: 100vh;
-  background: linear-gradient(135deg, #000000, #0C0C0C);
+  background: #080808;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 24px 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Blob verde — canto superior esquerdo */
+.login-container::before {
+  content: '';
+  position: absolute;
+  width: 640px;
+  height: 640px;
+  background: radial-gradient(circle, rgba(162, 255, 1, 0.18) 0%, transparent 65%);
+  border-radius: 50%;
+  top: -220px;
+  left: -200px;
+  pointer-events: none;
+  z-index: 0;
+  animation: blobVerde 9s ease-in-out infinite alternate;
+}
+
+/* Blob azul — canto inferior direito */
+.login-container::after {
+  content: '';
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(0, 166, 192, 0.16) 0%, transparent 65%);
+  border-radius: 50%;
+  bottom: -160px;
+  right: -160px;
+  pointer-events: none;
+  z-index: 0;
+  animation: blobAzul 11s ease-in-out infinite alternate;
+}
+
+@keyframes blobVerde {
+  from { transform: translate(0, 0) scale(1);    }
+  to   { transform: translate(60px, 50px) scale(1.12); }
+}
+
+@keyframes blobAzul {
+  from { transform: translate(0, 0) scale(1);    }
+  to   { transform: translate(-50px, -40px) scale(1.1); }
 }
 
 /* =========================================
-   CARD CENTRAL
+   CARD — glassmorphism
 ========================================= */
 .login-card {
-  background: #262626;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
   padding: 40px;
-  border-radius: 16px;
+  border-radius: 20px;
   width: 100%;
   max-width: 420px;
   color: white;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  position: relative;
+  z-index: 1;
 }
 
 /* =========================================
-   Logo dentro do card
+   LOGO
 ========================================= */
 .login__logo-icon {
   width: 200px;
@@ -51,6 +101,7 @@
 .auth-tabs {
   display: flex;
   justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .auth-tabs button {
@@ -58,12 +109,16 @@
   padding: 10px;
   background: none;
   border: none;
-  color: #888;
+  color: #555;
   font-weight: bold;
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  transition: 0.3s ease;
+  margin-bottom: -1px;
+  transition: color 0.25s ease, border-color 0.25s ease;
+  font-size: 14px;
 }
+
+.auth-tabs button:hover { color: #999; }
 
 .auth-tabs button.active {
   color: #A2FF01;
@@ -71,14 +126,14 @@
 }
 
 /* =========================================
-   ANIMAÇÃO SUAVE DO FORM
+   ANIMAÇÃO DO FORM
 ========================================= */
 .form-container { width: 100%; }
 
-.form-fields { animation: fadeSlide 0.4s ease; }
+.form-fields { animation: fadeSlide 0.35s ease; }
 
 @keyframes fadeSlide {
-  from { opacity: 0; transform: translateY(15px); }
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
@@ -87,76 +142,87 @@
 ========================================= */
 .login-card input {
   width: 100%;
-  padding: 12px;
-  margin-bottom: 15px;
-  border-radius: 8px;
-  border: 2px solid transparent;
-  background-color: #323232;
-  color: #A2FF01;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e0e0e0;
   outline: none;
   transition: all 0.3s ease;
   font-size: 14px;
 }
 
-.login-card input::placeholder { color: #A2FF01; opacity: 0.6; }
+.login-card input::placeholder { color: #555; }
 
 .login-card input:focus {
-  background-color: #A2FF01;
-  color: black;
-  box-shadow: 0 0 15px #A2FF01;
-  border: 2px solid #A2FF01;
+  background: #A2FF01;
+  color: #000;
+  border-color: #A2FF01;
+  box-shadow: 0 0 22px rgba(162, 255, 1, 0.35);
 }
 
 .login-card input:not([type="date"]):not(:placeholder-shown) {
-  background-color: #A2FF01;
-  color: black;
+  background: #A2FF01;
+  color: #000;
+  border-color: #A2FF01;
 }
 
-.login-card input:focus::placeholder { color: black; }
+.login-card input:focus::placeholder { color: rgba(0, 0, 0, 0.45); }
 
 .login-card input[type="date"] { font-family: inherit; color-scheme: dark; }
-.login-card input[type="date"]:valid { background-color: #A2FF01; color: black; }
+.login-card input[type="date"]:valid { background: #A2FF01; color: #000; border-color: #A2FF01; }
 
 /* =========================================
    BOTÃO
 ========================================= */
 .submit-button {
   width: 100%;
-  padding: 12px;
-  border-radius: 20px;
+  padding: 13px;
+  border-radius: 12px;
   border: none;
   font-weight: bold;
+  font-size: 14px;
   cursor: pointer;
-  background-color: #A2FF01;
-  color: black;
+  background: #A2FF01;
+  color: #000;
+  letter-spacing: 0.5px;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(162, 255, 1, 0.2);
 }
 
-.submit-button:hover { box-shadow: 0 0 20px #A2FF01; transform: scale(1.03); }
+.submit-button:hover {
+  box-shadow: 0 0 28px rgba(162, 255, 1, 0.5);
+  transform: translateY(-1px);
+}
+
 .submit-button:active { transform: scale(0.98); }
 
 .submit-button.login-success {
-  background-color: #1e7e34; color: white; box-shadow: 0 0 15px #00ff88;
+  background: #1e7e34;
+  color: white;
+  box-shadow: 0 0 18px #00ff88;
 }
 
 .submit-button.login-error {
-  background-color: #b31212; color: white;
-  box-shadow: 0 0 15px #ff2a2a; animation: shake 0.3s ease;
+  background: #b31212;
+  color: white;
+  box-shadow: 0 0 18px #ff2a2a;
+  animation: shake 0.3s ease;
 }
 
 @keyframes shake {
-  0%   { transform: translateX(0); }
-  25%  { transform: translateX(-3px); }
-  50%  { transform: translateX(3px); }
-  75%  { transform: translateX(-3px); }
-  100% { transform: translateX(0); }
+  0%   { transform: translateX(0);   }
+  25%  { transform: translateX(-4px); }
+  50%  { transform: translateX(4px);  }
+  75%  { transform: translateX(-4px); }
+  100% { transform: translateX(0);   }
 }
 
 /* =========================================
    RESPONSIVE — MOBILE
 ========================================= */
 @media (max-width: 767px) {
-  /* Container ocupa tela inteira, centralizado */
   .login-container {
     align-items: center;
     justify-content: center;
@@ -164,38 +230,26 @@
     min-height: 100vh;
   }
 
-  /* Card ocupa largura total, sem bordas laterais */
   .login-card {
     padding: 32px 24px;
     border-radius: 20px;
     gap: 18px;
     max-width: 100%;
     width: 100%;
-    /* Sombra sutil para destacar do fundo */
-    box-shadow: 0 0 40px #00000088;
   }
 
-  /* Logo maior e mais centralizada */
-  .login__logo {
-    max-width: 200px;
-    margin-bottom: 4px;
-  }
-
-  /* Tabs maiores para toque */
   .auth-tabs button {
     font-size: 15px;
     padding: 14px;
   }
 
-  /* Inputs com altura confortável */
   .login-card input {
     padding: 16px 14px;
-    font-size: 16px; /* evita zoom automático no iOS */
+    font-size: 16px;
     margin-bottom: 12px;
     border-radius: 12px;
   }
 
-  /* Botão de submit mais alto */
   .submit-button {
     padding: 16px;
     font-size: 16px;

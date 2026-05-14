@@ -49,7 +49,7 @@ export default function Navbar() {
       {/* ── Navbar desktop ── */}
       <nav className="navbar">
         <div className="navbar__brand">
-          <span className="navbar__brand-icon">◈</span>
+          <img src="/img/LogoHydra.png" alt="Hydra" className="navbar__brand-logo" />
           <span className="navbar__brand-name">
             <strong>HYDRA</strong> Finanças
           </span>

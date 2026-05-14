@@ -8,7 +8,7 @@ import {
 } from "recharts";
 import "./historico.css";
 
-const API      = "http://localhost:3333";
+const API = import.meta.env.VITE_API_URL || "http://localhost:3333";
 const getToken = () => sessionStorage.getItem("token");
 const authHeaders = () => ({
   "Content-Type": "application/json",

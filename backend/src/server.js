@@ -1,7 +1,7 @@
 const app = require("./app");
 const db = require('./config/database.js');
 
-const PORT = 3333;
+const PORT = process.env.PORT || 3333;
 
 app.listen(PORT, () => {
   console.log(`🔥 Server rodando em: http://localhost:${PORT}`);

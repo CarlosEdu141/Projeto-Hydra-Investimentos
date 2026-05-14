@@ -11,7 +11,7 @@ export default function Auth() {
   });
   const [loginStatus, setLoginStatus] = useState("idle");
 
-  const API = "http://localhost:3333/usuarios";
+  const API = `${import.meta.env.VITE_API_URL || "http://localhost:3333"}/usuarios`;
 
   const formatCPF = (value) => {
     value = value.replace(/\D/g, "");

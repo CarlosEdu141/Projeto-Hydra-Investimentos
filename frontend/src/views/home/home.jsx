@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "./home.css";
 
-const API = "http://localhost:3333";
+const API = import.meta.env.VITE_API_URL || "http://localhost:3333";
 const TIPO = {
   ENTRADA:        "ENTRADA",
   SAIDA_FIXA:     "SAIDA_FIXA",
@@ -74,21 +74,83 @@ const deleteLancamento = async (id) => {
   return r.json();
 };
 
+// ── NotificationBell ─────────────────────────────────────────────────────────
+const COR_NOTIF   = { danger: "#ff4d4d", warning: "#ff9900", info: "#00a6c0" };
+const LABEL_NOTIF = { danger: "Crítico",  warning: "Atenção",  info: "Info"   };
+
+function NotificationBell({ alertas }) {
+  const [aberto, setAberto] = useState(false);
+  const count = alertas.length;
+
+  if (count === 0) return null;
+
+  const mesRef = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  return (
+    <div className="notif-wrapper">
+      <button
+        className={`notif-btn${aberto ? " notif-btn--active" : ""}`}
+        onClick={() => setAberto(o => !o)}
+        aria-label="Notificações"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span className="notif-badge">{count}</span>
+      </button>
+
+      {aberto && (
+        <>
+          <div className="notif-overlay" onClick={() => setAberto(false)} />
+          <div className="notif-panel">
+            <div className="notif-panel__header">
+              <span className="notif-panel__title">Alertas do mês</span>
+              <span className="notif-panel__count">{count} ativo{count !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="notif-panel__list">
+              {alertas.map((a, i) => (
+                <div key={i} className="notif-item">
+                  <div className="notif-item__accent" style={{ background: COR_NOTIF[a.tipo] }} />
+                  <div className="notif-item__body">
+                    <div className="notif-item__row">
+                      <span className="notif-item__titulo">{a.titulo}</span>
+                      <span
+                        className="notif-item__tag"
+                        style={{ color: COR_NOTIF[a.tipo], background: `${COR_NOTIF[a.tipo]}15`, border: `1px solid ${COR_NOTIF[a.tipo]}30` }}
+                      >
+                        {LABEL_NOTIF[a.tipo]}
+                      </span>
+                    </div>
+                    <span className="notif-item__desc">{a.texto}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="notif-panel__footer">
+              Baseado nos lançamentos de {mesRef}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── KpiCard ───────────────────────────────────────────────────────────────────
 function KpiCard({ label, value, color, icon, sub, isNegative }) {
   const displayColor = isNegative ? COR.SALDO_NEG : color;
   return (
     <div
       className="kpi-card"
+      style={{ borderTopColor: `${displayColor}88` }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = `${displayColor}99`;
-        e.currentTarget.style.boxShadow   = `0 0 18px ${displayColor}33`;
-        e.currentTarget.style.transform   = "translateY(-2px)";
+        e.currentTarget.style.boxShadow = `0 8px 28px ${displayColor}22`;
+        e.currentTarget.style.transform = "translateY(-2px)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "#2a2a2a";
-        e.currentTarget.style.boxShadow   = "none";
-        e.currentTarget.style.transform   = "translateY(0)";
+        e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.35)";
+        e.currentTarget.style.transform = "translateY(0)";
       }}
     >
       <div className="kpi-card__label">{label}</div>
@@ -468,6 +530,17 @@ export default function Home() {
   }, [saidasFixas, saidasVariaveis]);
   const maxTop = topSaidas[0]?.[1].val || 1;
 
+  const alertas = useMemo(() => {
+    const list = [];
+    if (saldo < 0)
+      list.push({ tipo: "danger", titulo: "Saldo negativo", texto: `Saídas (${formatBRL(totalSaidas)}) superam entradas (${formatBRL(totalEntradas)}) em ${formatBRL(Math.abs(saldo))}.` });
+    if (totalVariaveis > totalFixas && totalEntradas > 0)
+      list.push({ tipo: "warning", titulo: "Variáveis acima das fixas", texto: `${formatBRL(totalVariaveis)} em gastos variáveis vs. ${formatBRL(totalFixas)} em fixos.` });
+    if (saldo >= 0 && pctSaude < 20 && totalEntradas > 0)
+      list.push({ tipo: "info", titulo: "Saldo livre baixo", texto: `Apenas ${pctSaude}% da renda disponível (${formatBRL(saldo)}). Considere revisar despesas.` });
+    return list;
+  }, [saldo, totalSaidas, totalEntradas, totalVariaveis, totalFixas, pctSaude]);
+
   const handleAdd = async (payload) => {
     setSaving(true);
     setApiError(null);
@@ -505,35 +578,9 @@ export default function Home() {
   return (
     <div className="home-page">
 
-      {apiError && <div className="api-error-banner"><span>⚠️</span> {apiError}</div>}
+      <NotificationBell alertas={alertas} />
 
-      {/* ── Alertas ── */}
-      <div className="alerts alerts--top">
-        {saldo < 0 && (
-          <div className="alert alert--danger">
-            <span className="alert__icon">⚠️</span>
-            <span className="alert__text">
-              Atenção: suas saídas ({formatBRL(totalSaidas)}) superam as entradas ({formatBRL(totalEntradas)}) em <strong>{formatBRL(Math.abs(saldo))}</strong>.
-            </span>
-          </div>
-        )}
-        {totalVariaveis > totalFixas && totalEntradas > 0 && (
-          <div className="alert alert--warning">
-            <span className="alert__icon">📊</span>
-            <span className="alert__text">
-              Saídas variáveis ({formatBRL(totalVariaveis)}) maiores que as fixas ({formatBRL(totalFixas)}). Atenção aos gastos eventuais.
-            </span>
-          </div>
-        )}
-        {saldo >= 0 && pctSaude < 20 && totalEntradas > 0 && (
-          <div className="alert alert--info">
-            <span className="alert__icon">💡</span>
-            <span className="alert__text">
-              Saldo livre baixo ({pctSaude}% da renda). Considere revisar suas despesas.
-            </span>
-          </div>
-        )}
-      </div>
+      {apiError && <div className="api-error-banner"><span>⚠️</span> {apiError}</div>}
 
       {/* ── KPI Cards ── */}
       <div className="kpi-grid">

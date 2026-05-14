@@ -25,10 +25,12 @@
   padding-left: 25px;
 }
 
-.navbar__brand-icon {
-  font-size: 18px;
-  color: #A2FF01;
-  text-shadow: 0 0 10px #A2FF0188;
+.navbar__brand-logo {
+  height: 30px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(162, 255, 1, 0.4));
+  flex-shrink: 0;
 }
 
 .navbar__brand-name {
