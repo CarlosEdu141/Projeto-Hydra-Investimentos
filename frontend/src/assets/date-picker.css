@@ -1,0 +1,162 @@
+/* =========================================
+   DATE PICKER — componente personalizado
+   Usado em: ModalLancamento, ModalEditar, Perfil
+========================================= */
+
+.dp-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #262626;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #ccc;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+.dp-trigger:hover  { border-color: #444; }
+.dp-trigger:focus  { box-shadow: 0 0 0 2px #A2FF0122; }
+
+.dp-trigger__icon  { color: #555; flex-shrink: 0; display: flex; align-items: center; }
+.dp-trigger__val   { flex: 1; }
+.dp-trigger__val--placeholder { color: #555; }
+.dp-trigger__caret { color: #555; font-size: 10px; }
+
+/* Painel flutuante (position: fixed — funciona dentro de modais) */
+.dp-panel {
+  position: fixed;
+  z-index: 9999;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  animation: dp-fade 0.15s ease;
+  min-width: 260px;
+}
+
+@keyframes dp-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Navegação mês */
+.dp-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.dp-mes-ano {
+  font-size: 13px;
+  font-weight: bold;
+  color: #ddd;
+  letter-spacing: 0.5px;
+}
+
+.dp-nav-btn {
+  background: #262626;
+  border: 1px solid #333;
+  color: #888;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  line-height: 1;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.dp-nav-btn:hover { background: #333; color: #ccc; border-color: #444; }
+
+/* Cabeçalho dias da semana */
+.dp-semana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+.dp-semana__dia {
+  text-align: center;
+  font-size: 9px;
+  color: #444;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 4px 0;
+}
+
+/* Grid de dias */
+.dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dp-cell {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #aaa;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+  padding: 0;
+}
+.dp-cell:hover:not(:disabled):not(.dp-cell--vazio) {
+  background: #2a2a2a;
+  color: #fff;
+  border-color: #333;
+}
+.dp-cell--vazio   { cursor: default; visibility: hidden; }
+.dp-cell--hoje    { border-color: #A2FF0155 !important; color: #A2FF01; }
+.dp-cell--selected {
+  font-weight: bold;
+  border-color: transparent;
+}
+
+/* Botão "Hoje" */
+.dp-hoje-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  background: none;
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 6px 0;
+  font-size: 11px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+}
+.dp-hoje-btn:hover { filter: brightness(1.3); }
+
+/* ── Mobile ── */
+@media (max-width: 767px) {
+  .dp-trigger { font-size: 16px; padding: 12px; }
+
+  .dp-panel {
+    position: fixed;
+    left: 12px !important;
+    right: 12px;
+    width: auto !important;
+    border-radius: 16px;
+  }
+}

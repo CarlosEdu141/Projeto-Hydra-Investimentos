@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import ModalLancamento from "../../assets/ModalLancamento";
+import CustomSelect from "../../assets/CustomSelect";
 import "./home.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3333";
@@ -330,9 +332,22 @@ function AddRow({ tipo, categorias, onAdd, saving }) {
   return (
     <tr className={`add-row-form ${FORM_CLASS[tipo]}`}>
       <td>
-        <select value={form.id_categoria} onChange={(e) => handle("id_categoria", e.target.value)}>
-          {catOptions.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
+        <CustomSelect
+          value={form.id_categoria}
+          onChange={v => handle("id_categoria", v)}
+          options={catOptions}
+          placeholder="Categoria..."
+          accentColor={accent}
+          style={{
+            padding:      "6px 8px",
+            fontSize:     "12px",
+            borderRadius: "6px",
+            background:   `${accent}10`,
+            border:       `1px solid ${accent}33`,
+            color:        accent,
+            minHeight:    "unset",
+          }}
+        />
       </td>
       <td>
         <input value={form.descricao} onChange={(e) => handle("descricao", e.target.value)} placeholder="Descrição..." />
@@ -388,77 +403,17 @@ function TableCard({ title, subtitle, total, tipo, loading, children }) {
   );
 }
 
-// ── AddRowModal (versão mobile) ───────────────────────────────────────────────
-function AddRowModal({ tipo, categorias, onAdd, saving, onClose }) {
-  const [form, setForm] = useState(EMPTY_FORM());
-  const accent = COR[tipo];
-  const handle = (field, val) => setForm((f) => ({ ...f, [field]: val }));
-  const catOptions = useMemo(() => {
-    const fromApi = categorias.filter((c) => c.tipo === tipo);
-    return fromApi.length > 0
-      ? fromApi.map((c) => ({ label: c.nome, value: c.id_categoria }))
-      : CAT_PADRAO[tipo].map((n) => ({ label: n, value: n }));
-  }, [categorias, tipo]);
-  const submit = async () => {
-    const parsed = parseFloat(form.valor);
-    if (!form.valor || isNaN(parsed)) return;
-    await onAdd({
-      id_categoria:    form.id_categoria || catOptions[0]?.value || null,
-      id_conta:        null,
-      descricao:       form.descricao,
-      valor:           parsed,
-      data_lancamento: form.data_lancamento,
-      tipo,
-      status:          "PENDENTE",
-    });
-    setForm(EMPTY_FORM());
-  };
-  return (
-    <div className="mobile-modal-fields">
-      <div className="mobile-modal-row">
-        <div className="mobile-modal-field">
-          <label className="mobile-modal-label">Categoria</label>
-          <select className="mobile-modal-input" style={{ borderColor: `${accent}44`, color: "#ccc" }}
-            value={form.id_categoria} onChange={(e) => handle("id_categoria", e.target.value)}>
-            {catOptions.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
-        </div>
-        <div className="mobile-modal-field">
-          <label className="mobile-modal-label">Valor (R$)</label>
-          <input className="mobile-modal-input" type="number" placeholder="0,00"
-            style={{ borderColor: `${accent}44`, color: accent, textAlign: "right" }}
-            value={form.valor} onChange={(e) => handle("valor", e.target.value)} />
-        </div>
-      </div>
-      <div className="mobile-modal-field">
-        <label className="mobile-modal-label">Descrição (opcional)</label>
-        <input className="mobile-modal-input" type="text" placeholder="Ex: Conta de luz..."
-          style={{ borderColor: `${accent}44` }}
-          value={form.descricao} onChange={(e) => handle("descricao", e.target.value)} />
-      </div>
-      <div className="mobile-modal-actions">
-        <button className="mobile-modal-btn-cancel" onClick={onClose}>Cancelar</button>
-        <button className="mobile-modal-btn-save"
-          style={{ background: `${accent}22`, border: `1px solid ${accent}88`, color: accent }}
-          onClick={submit} disabled={saving}>
-          {saving ? "Salvando..." : "Salvar"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ── Home ──────────────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate();
 
   const [lancamentos, setLancamentos] = useState([]);
   const [categorias,  setCategorias]  = useState([]);
+  const [cartoes,     setCartoes]     = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [saving,      setSaving]      = useState(false);
   const [apiError,    setApiError]    = useState(null);
-  const [modalMobile, setModalMobile] = useState(false);
-  const [modalTipo,   setModalTipo]   = useState(TIPO.ENTRADA);
+  const [modalAberto, setModalAberto] = useState(false);
 
   const hoje     = new Date();
   const mesAtual = hoje.getMonth();
@@ -473,9 +428,14 @@ export default function Home() {
       setLoading(true);
       setApiError(null);
       try {
-        const [lancs, cats] = await Promise.all([fetchLancamentos(), fetchCategorias()]);
+        const [lancs, cats, rCart] = await Promise.all([
+          fetchLancamentos(),
+          fetchCategorias(),
+          fetch(`${API}/cartoes`, { headers: authHeaders() }),
+        ]);
         setLancamentos(lancs);
         setCategorias(cats);
+        setCartoes(rCart.ok ? await rCart.json() : []);
       } catch (err) {
         if (err.message === "unauthorized") {
           sessionStorage.clear();
@@ -491,7 +451,7 @@ export default function Home() {
 
   // Escuta o FAB da navbar para abrir o modal
   useEffect(() => {
-    const handler = () => setModalMobile(true);
+    const handler = () => setModalAberto(true);
     window.addEventListener("openLancamentoModal", handler);
     return () => window.removeEventListener("openLancamentoModal", handler);
   }, []);
@@ -540,6 +500,17 @@ export default function Home() {
       list.push({ tipo: "info", titulo: "Saldo livre baixo", texto: `Apenas ${pctSaude}% da renda disponível (${formatBRL(saldo)}). Considere revisar despesas.` });
     return list;
   }, [saldo, totalSaidas, totalEntradas, totalVariaveis, totalFixas, pctSaude]);
+
+  const recarregar = async () => {
+    try {
+      const [lancs, rCart] = await Promise.all([
+        fetchLancamentos(),
+        fetch(`${API}/cartoes`, { headers: authHeaders() }),
+      ]);
+      setLancamentos(lancs);
+      setCartoes(rCart.ok ? await rCart.json() : []);
+    } catch { }
+  };
 
   const handleAdd = async (payload) => {
     setSaving(true);
@@ -686,35 +657,13 @@ export default function Home() {
         </TableCard>
       </div>
 
-      {/* ── Modal Mobile — aberto via FAB da navbar ── */}
-      {modalMobile && (
-        <div className="mobile-modal-overlay" onClick={(e) => e.target === e.currentTarget && setModalMobile(false)}>
-          <div className="mobile-modal-sheet">
-            <div className="mobile-modal-drag" />
-            <div className="mobile-modal-header">
-              <span className="mobile-modal-title">Novo Lançamento</span>
-              <button className="mobile-modal-close" onClick={() => setModalMobile(false)}>✕</button>
-            </div>
-            <div className="mobile-modal-tipos">
-              {[TIPO.ENTRADA, TIPO.SAIDA_FIXA, TIPO.SAIDA_VARIAVEL].map((t) => (
-                <button key={t}
-                  className="mobile-modal-tipo-btn"
-                  style={modalTipo === t ? { color: COR[t], borderColor: COR[t], background: `${COR[t]}15` } : {}}
-                  onClick={() => setModalTipo(t)}
-                >
-                  {t === TIPO.ENTRADA ? "Entrada" : t === TIPO.SAIDA_FIXA ? "Saída Fixa" : "Saída Variável"}
-                </button>
-              ))}
-            </div>
-            <AddRowModal
-              tipo={modalTipo}
-              categorias={categorias}
-              saving={saving}
-              onAdd={async (payload) => { await handleAdd(payload); setModalMobile(false); }}
-              onClose={() => setModalMobile(false)}
-            />
-          </div>
-        </div>
+      {modalAberto && (
+        <ModalLancamento
+          categorias={categorias}
+          cartoes={cartoes}
+          onClose={() => setModalAberto(false)}
+          onSaved={recarregar}
+        />
       )}
 
     </div>

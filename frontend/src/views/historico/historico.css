@@ -148,6 +148,35 @@
 .col-valor { font-weight: bold; white-space: nowrap; }
 .align-right { text-align: right; }
 
+.col-acoes { width: 72px; text-align: right; }
+
+.row-acoes {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.historico-row:hover .row-acoes { opacity: 1; }
+
+.btn-acao {
+  background: none;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #555;
+  font-size: 13px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+.btn-acao--edit:hover   { border-color: #A2FF0166; color: #A2FF01; background: #A2FF0110; }
+.btn-acao--delete:hover { border-color: #ff4d4d66; color: #ff4d4d; background: #ff4d4d10; }
+
 /* ── Badges ── */
 .tipo-badge {
   display: inline-block;
@@ -168,8 +197,147 @@
   letter-spacing: 0.5px;
 }
 
-.status-badge--pago    { background: #A2FF0115; color: #A2FF01; border: 1px solid #A2FF0133; }
+.status-badge--pago     { background: #A2FF0115; color: #A2FF01; border: 1px solid #A2FF0133; }
 .status-badge--pendente { background: #ff990015; color: #ff9900; border: 1px solid #ff990033; }
+
+.pagamento-badge {
+  display: block;
+  margin-top: 3px;
+  font-size: 9px;
+  color: #555;
+  letter-spacing: 0.5px;
+}
+
+.parcela-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #ffffff0a;
+  border: 1px solid #333;
+  color: #888;
+  font-weight: bold;
+}
+
+.cartao-badge {
+  display: block;
+  margin-top: 2px;
+  font-size: 9px;
+  color: #555;
+}
+
+/* ── Forma de Pagamento no Modal ── */
+.modal-pagamento-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.modal-pagamento-tab {
+  flex: 1;
+  min-width: 70px;
+  padding: 7px 8px;
+  background: none;
+  border: 1px solid #2a2a2a;
+  color: #555;
+  border-radius: 8px;
+  font-size: 11px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.modal-pagamento-tab:hover { border-color: #444; color: #aaa; }
+
+/* ── Parcelamento ── */
+.modal-parcelar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.toggle-parcelar {
+  background: #2a2a2a;
+  border: 1px solid #333;
+  color: #555;
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 11px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+
+.toggle-parcelar--on {
+  background: #A2FF0115;
+  border-color: #A2FF0155;
+  color: #A2FF01;
+}
+
+.modal-parcelas-wrap {
+  animation: fadeIn 0.2s ease;
+}
+
+.pmt-preview {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 9px 12px;
+  background: #262626;
+  border: 1px solid #333;
+  border-radius: 8px;
+  min-height: 40px;
+}
+
+.pmt-preview__valor {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.pmt-preview__total {
+  font-size: 10px;
+  color: #555;
+  margin-top: 2px;
+}
+
+/* Checkbox de juros */
+.modal-juros-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #aaa;
+  cursor: pointer;
+  user-select: none;
+}
+
+.modal-juros-check input[type="checkbox"] {
+  accent-color: #ff9900;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.modal-juros-taxa {
+  color: #ff9900;
+  font-size: 11px;
+}
+
+.modal-sem-cartao {
+  font-size: 11px;
+  color: #ff9900;
+  background: #ff990010;
+  border: 1px solid #ff990033;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
 
 /* =========================================
    BOTÃO NOVO LANÇAMENTO
@@ -226,11 +394,18 @@
   padding: 32px;
   width: 100%;
   max-width: 520px;
+  max-height: 92vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 24px;
   animation: slideUp 0.25s ease;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
 }
+.modal-box::-webkit-scrollbar       { width: 4px; }
+.modal-box::-webkit-scrollbar-track  { background: transparent; }
+.modal-box::-webkit-scrollbar-thumb  { background: #333; border-radius: 4px; }
 
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
@@ -332,11 +507,6 @@
 
 .modal-input:focus {
   box-shadow: 0 0 0 2px #A2FF0122;
-}
-
-.modal-input option {
-  background: #1e1e1e;
-  color: #ccc;
 }
 
 .modal-input--valor {
@@ -511,8 +681,8 @@
 .filter-right {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 8px;
+  flex-wrap: nowrap;
 }
 
 .filter-select {
@@ -521,20 +691,12 @@
   border-radius: 10px;
   padding: 8px 14px;
   font-size: 12px;
-  font-family: Arial, Helvetica, sans-serif;
-  color: #ccc;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.2s ease;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23555'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 32px;
+  min-height: unset;
+  width: auto;
+  flex-shrink: 0;
 }
 
-.filter-select:focus { border-color: #A2FF0155; }
-.filter-select option { background: #1e1e1e; }
+.filter-select:hover { border-color: #3a3a3a; }
 
 /* ── Ordenação ── */
 .th-sortable {

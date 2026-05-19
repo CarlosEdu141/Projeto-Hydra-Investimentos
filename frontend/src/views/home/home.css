@@ -380,6 +380,7 @@
 .add-row-form td:last-child  { padding-right: 8px; }
 
 .add-row-form select,
+.add-row-form .cs-trigger,
 .add-row-form input {
   width: 100%;
   padding: 6px 8px;
@@ -390,17 +391,16 @@
   font-size: 12px;
   outline: none;
   transition: all 0.3s ease;
+  min-height: unset;
 }
 
-.add-row-form select option {
-  background: #1a1a1a;
-  color: #ffffff;
-}
+.add-row-form select option { background: #1a1a1a; color: #ffffff; }
 
 .add-row-form input[type="number"] { text-align: right; }
 
 /* ── Entrada (verde neon) ── */
 .form--entrada select,
+.form--entrada .cs-trigger,
 .form--entrada input {
   color: #A2FF01;
   border-color: rgba(162, 255, 1, 0.3);
@@ -412,9 +412,15 @@
   border-color: #A2FF01;
   box-shadow: 0 0 12px rgba(162, 255, 1, 0.4);
 }
+.form--entrada .cs-trigger:focus {
+  background: #A2FF0115;
+  border-color: #A2FF01;
+  box-shadow: 0 0 12px rgba(162, 255, 1, 0.4);
+}
 
 /* ── Saída Fixa (vermelho) ── */
 .form--fixa select,
+.form--fixa .cs-trigger,
 .form--fixa input {
   color: #ff4d4d;
   border-color: rgba(255, 77, 77, 0.3);
@@ -426,9 +432,15 @@
   border-color: #ff4d4d;
   box-shadow: 0 0 12px rgba(255, 77, 77, 0.4);
 }
+.form--fixa .cs-trigger:focus {
+  background: #ff4d4d15;
+  border-color: #ff4d4d;
+  box-shadow: 0 0 12px rgba(255, 77, 77, 0.4);
+}
 
 /* ── Saída Variável (laranja) ── */
 .form--variavel select,
+.form--variavel .cs-trigger,
 .form--variavel input {
   color: #ff9900;
   border-color: rgba(255, 153, 0, 0.3);
@@ -437,6 +449,11 @@
 .form--variavel input:focus {
   background: #ff9900;
   color: #000;
+  border-color: #ff9900;
+  box-shadow: 0 0 12px rgba(255, 153, 0, 0.4);
+}
+.form--variavel .cs-trigger:focus {
+  background: #ff990015;
   border-color: #ff9900;
   box-shadow: 0 0 12px rgba(255, 153, 0, 0.4);
 }
@@ -638,6 +655,34 @@
   color: #3a3a3a;
   font-style: italic;
 }
+
+/* =========================================
+   API ERROR BANNER
+========================================= */
+/* =========================================
+   TOOLBAR
+========================================= */
+.home-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.btn-novo-lancamento-home {
+  background: #A2FF0115;
+  border: 1px solid #A2FF0155;
+  color: #A2FF01;
+  border-radius: 10px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: bold;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-novo-lancamento-home:hover { filter: brightness(1.2); background: #A2FF0125; }
 
 /* =========================================
    API ERROR BANNER

@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const usuarioController = require('../controllers/usuario.controller');
+const autenticar = require('../middlewares/Auth.middleware');
 
 router.post('/', usuarioController.criar);
-
-// NOVA ROTA LOGIN
 router.post('/login', usuarioController.login);
+router.post('/verificar-senha', autenticar, usuarioController.verificarSenha);
 
 router.get('/', usuarioController.listar);
 router.get('/:id', usuarioController.buscarPorId);

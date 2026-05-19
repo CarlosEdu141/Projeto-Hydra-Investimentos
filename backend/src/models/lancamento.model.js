@@ -1,28 +1,32 @@
 const db = require('../config/database');
 
-// Converte para inteiro ou retorna null
 function toIntOrNull(val) {
   if (val === null || val === undefined || val === '') return null;
   const n = Number(val);
   return Number.isInteger(n) && n > 0 ? n : null;
 }
 
-// Deriva natureza automaticamente pelo tipo do lançamento
-// ENTRADA e SAIDA_FIXA → FIXA | SAIDA_VARIAVEL → VARIAVEL
 function derivarNatureza(tipo) {
   return tipo === 'SAIDA_VARIAVEL' ? 'VARIAVEL' : 'FIXA';
 }
 
-async function criarLancamento(dados) {
-  const sql = `
-    INSERT INTO lancamento
-      (id_user, id_categoria, id_conta, descricao, valor, tipo, natureza,
-       meio_pagamento, recorrente, status, data_competencia)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    RETURNING *
-  `;
+// Pagamentos imediatos = PAGO; crédito/ausente = PENDENTE
+function derivarStatus(meio_pagamento) {
+  const pagosNaHora = ['DINHEIRO', 'PIX', 'DEBITO'];
+  return pagosNaHora.includes(meio_pagamento) ? 'PAGO' : 'PENDENTE';
+}
 
-  return db.query(sql, [
+const SQL_INSERT = `
+  INSERT INTO lancamento
+    (id_user, id_categoria, id_conta, descricao, valor, tipo, natureza,
+     meio_pagamento, recorrente, status, data_competencia,
+     id_cartao, grupo_parcelas, parcela_atual, total_parcelas)
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+  RETURNING *
+`;
+
+function buildParams(dados) {
+  return [
     dados.id_user,
     toIntOrNull(dados.id_categoria),
     toIntOrNull(dados.id_conta),
@@ -32,9 +36,37 @@ async function criarLancamento(dados) {
     derivarNatureza(dados.tipo),
     dados.meio_pagamento               || null,
     dados.recorrente                   || false,
-    'PENDENTE',
+    derivarStatus(dados.meio_pagamento),
     dados.data_lancamento              || new Date().toISOString().split('T')[0],
-  ]);
+    toIntOrNull(dados.id_cartao),
+    dados.grupo_parcelas               || null,
+    dados.parcela_atual                || null,
+    dados.total_parcelas               || null,
+  ];
+}
+
+async function criarLancamento(dados) {
+  return db.query(SQL_INSERT, buildParams(dados));
+}
+
+// Insere múltiplas parcelas em uma única transação
+async function criarLote(lista) {
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const inseridos = [];
+    for (const dados of lista) {
+      const { rows } = await client.query(SQL_INSERT, buildParams(dados));
+      inseridos.push(rows[0]);
+    }
+    await client.query('COMMIT');
+    return { rows: inseridos };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 async function listarLancamentos({ tipo, id_user } = {}) {
@@ -56,14 +88,38 @@ async function listarLancamentos({ tipo, id_user } = {}) {
   const sql = `
     SELECT
       l.*,
-      c.nome AS categoria_nome
+      c.nome AS categoria_nome,
+      cart.nome AS cartao_nome
     FROM lancamento l
-    LEFT JOIN categoria c ON c.id_categoria = l.id_categoria
+    LEFT JOIN categoria c    ON c.id_categoria = l.id_categoria
+    LEFT JOIN cartao    cart ON cart.id_cartao  = l.id_cartao
     ${where}
     ORDER BY l.data_competencia DESC, l.id_lancamento DESC
   `;
 
   return db.query(sql, params);
+}
+
+async function atualizarLancamento(id_lancamento, id_user, dados) {
+  return db.query(
+    `UPDATE lancamento
+     SET descricao       = $1,
+         valor           = $2,
+         id_categoria    = $3,
+         data_competencia = $4,
+         status          = $5
+     WHERE id_lancamento = $6 AND id_user = $7
+     RETURNING *`,
+    [
+      dados.descricao    || null,
+      dados.valor,
+      dados.id_categoria || null,
+      dados.data_lancamento,
+      dados.status       || 'PENDENTE',
+      id_lancamento,
+      id_user,
+    ]
+  );
 }
 
 async function deletarLancamento(id_lancamento, id_user) {
@@ -75,4 +131,4 @@ async function deletarLancamento(id_lancamento, id_user) {
   return db.query(sql, [id_lancamento, id_user]);
 }
 
-module.exports = { criarLancamento, listarLancamentos, deletarLancamento };
+module.exports = { criarLancamento, criarLote, listarLancamentos, atualizarLancamento, deletarLancamento };

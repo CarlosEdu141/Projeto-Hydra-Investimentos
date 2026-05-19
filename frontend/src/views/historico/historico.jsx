@@ -2,14 +2,17 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import DatePicker from "../../assets/DatePicker";
+import CustomSelect from "../../assets/CustomSelect";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer
 } from "recharts";
+import ModalLancamento from "../../assets/ModalLancamento";
 import "./historico.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3333";
-const getToken = () => sessionStorage.getItem("token");
+const getToken    = () => sessionStorage.getItem("token");
 const authHeaders = () => ({
   "Content-Type": "application/json",
   "Authorization": `Bearer ${getToken()}`,
@@ -41,19 +44,18 @@ const LABEL_TIPO = {
   SAIDA_VARIAVEL: "Saída Variável",
 };
 
+const LABEL_PAGAMENTO = {
+  DINHEIRO: "Dinheiro",
+  PIX:      "PIX",
+  DEBITO:   "Débito",
+  CREDITO:  "Crédito",
+};
+
 const CAT_PADRAO = {
   ENTRADA:        ["Salário","Freelance","Dividendos","Aluguel recebido","Rendimento","Outros (entrada)"],
   SAIDA_FIXA:     ["Luz","Água","Internet","Aluguel","Supermercado","Matrícula","Plano de saúde","Combustível","Outros (fixo)"],
   SAIDA_VARIAVEL: ["Lazer","Restaurante","Roupas","Viagem","Farmácia","Beleza","Delivery","Assinatura","Presente","Outros (variável)"],
 };
-
-const EMPTY_MODAL = () => ({
-  tipo:            "ENTRADA",
-  id_categoria:    "",
-  descricao:       "",
-  valor:           "",
-  data_lancamento: new Date().toISOString().split("T")[0],
-});
 
 // ── Tooltip customizado do gráfico ────────────────────────────────────────────
 function CustomTooltip({ active, payload, label }) {
@@ -91,7 +93,7 @@ function GraficoComparativo({ lancamentos }) {
     const meses = [];
 
     for (let i = periodo - 1; i >= 0; i--) {
-      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      const d   = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
       const mes = d.getMonth();
       const ano = d.getFullYear();
 
@@ -105,7 +107,7 @@ function GraficoComparativo({ lancamentos }) {
       const variaveis = doMes.filter(l => l.tipo === "SAIDA_VARIAVEL").reduce((s, l) => s + Number(l.valor), 0);
 
       meses.push({
-        mes:       `${NOMES_MES[mes]}/${String(ano).slice(2)}`,
+        mes: `${NOMES_MES[mes]}/${String(ano).slice(2)}`,
         entradas,
         fixas,
         variaveis,
@@ -171,40 +173,41 @@ function GraficoComparativo({ lancamentos }) {
   );
 }
 
-// ── Modal de Lançamento Retroativo ────────────────────────────────────────────
-function ModalLancamento({ onClose, onSaved, categorias }) {
-  const [form,   setForm]   = useState(EMPTY_MODAL());
+// ── Modal de Edição ───────────────────────────────────────────────────────────
+function ModalEditar({ lancamento, categorias, onClose, onSaved }) {
+  const cor = COR_TIPO[lancamento.tipo] || "#888";
+
+  const catOptions = useMemo(() => {
+    const fromApi = categorias.filter(c => c.tipo === lancamento.tipo);
+    return fromApi.length > 0
+      ? fromApi.map(c => ({ label: c.nome, value: c.id_categoria }))
+      : CAT_PADRAO[lancamento.tipo]?.map(n => ({ label: n, value: n })) || [];
+  }, [categorias, lancamento.tipo]);
+
+  const [form,   setForm]   = useState({
+    descricao:       lancamento.descricao       || "",
+    valor:           lancamento.valor           || "",
+    id_categoria:    lancamento.id_categoria    || "",
+    data_lancamento: (lancamento.data_competencia || "").split("T")[0],
+    status:          lancamento.status          || "PENDENTE",
+  });
   const [saving, setSaving] = useState(false);
   const [erro,   setErro]   = useState(null);
 
-  const cor = COR_TIPO[form.tipo];
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
 
-  const catOptions = useMemo(() => {
-    const fromApi = categorias.filter((c) => c.tipo === form.tipo);
-    return fromApi.length > 0
-      ? fromApi.map((c) => ({ label: c.nome, value: c.id_categoria }))
-      : CAT_PADRAO[form.tipo].map((n) => ({ label: n, value: n }));
-  }, [categorias, form.tipo]);
-
-  const handle    = (field, val) => setForm((f) => ({ ...f, [field]: val }));
-  const handleTipo = (tipo) => setForm((f) => ({ ...f, tipo, id_categoria: "" }));
+  const handle = (field, val) => setForm(f => ({ ...f, [field]: val }));
 
   const handleSubmit = async () => {
     if (!form.valor || isNaN(parseFloat(form.valor))) { setErro("Informe um valor válido."); return; }
-    if (!form.data_lancamento)                         { setErro("Informe a data."); return; }
     setSaving(true); setErro(null);
     try {
-      const r = await fetch(`${API}/lancamentos`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({
-          tipo:            form.tipo,
-          id_categoria:    form.id_categoria || catOptions[0]?.value || null,
-          descricao:       form.descricao,
-          valor:           parseFloat(form.valor),
-          data_lancamento: form.data_lancamento,
-          status:          "PENDENTE",
-        }),
+      const r = await fetch(`${API}/lancamentos/${lancamento.id_lancamento}`, {
+        method: "PUT", headers: authHeaders(),
+        body: JSON.stringify({ ...form, valor: parseFloat(form.valor) }),
       });
       if (!r.ok) throw new Error("erro");
       await onSaved();
@@ -214,56 +217,64 @@ function ModalLancamento({ onClose, onSaved, categorias }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal-box">
         <div className="modal-header">
           <div>
-            <h2 className="modal-title">Novo Lançamento</h2>
-            <p className="modal-subtitle">Retroativo ou atual</p>
+            <h2 className="modal-title">Editar Lançamento</h2>
+            <p className="modal-subtitle">
+              <span className="tipo-badge" style={{ color: cor, background: `${cor}15`, border: `1px solid ${cor}33` }}>
+                {LABEL_TIPO[lancamento.tipo] || lancamento.tipo}
+              </span>
+            </p>
           </div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
 
-        <div className="modal-tipo-tabs">
-          {["ENTRADA","SAIDA_FIXA","SAIDA_VARIAVEL"].map((t) => (
-            <button
-              key={t}
-              className={`modal-tipo-tab${form.tipo === t ? " modal-tipo-tab--active" : ""}`}
-              style={form.tipo === t ? { color: COR_TIPO[t], borderColor: COR_TIPO[t], background: `${COR_TIPO[t]}12` } : {}}
-              onClick={() => handleTipo(t)}
-            >
-              {LABEL_TIPO[t]}
-            </button>
-          ))}
-        </div>
-
         <div className="modal-fields">
-          <div className="modal-field">
-            <label className="modal-label">Data</label>
-            <input className="modal-input" type="date" value={form.data_lancamento}
-              onChange={(e) => handle("data_lancamento", e.target.value)}
-              style={{ borderColor: `${cor}44` }} />
+          <div className="modal-field-group modal-field-group--2">
+            <div className="modal-field">
+              <label className="modal-label">Data</label>
+              <DatePicker
+                value={form.data_lancamento}
+                onChange={v => handle("data_lancamento", v)}
+                accentColor={cor}
+              />
+            </div>
+            <div className="modal-field">
+              <label className="modal-label">Status</label>
+              <CustomSelect
+                value={form.status}
+                onChange={v => handle("status", v)}
+                options={[{ value: "PAGO", label: "PAGO" }, { value: "PENDENTE", label: "PENDENTE" }]}
+                accentColor={cor}
+                style={{ borderColor: `${cor}44` }}
+              />
+            </div>
           </div>
           <div className="modal-field-group modal-field-group--2">
             <div className="modal-field">
               <label className="modal-label">Categoria</label>
-              <select className="modal-input" value={form.id_categoria}
-                onChange={(e) => handle("id_categoria", e.target.value)}
-                style={{ borderColor: `${cor}44` }}>
-                {catOptions.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
+              <CustomSelect
+                value={form.id_categoria}
+                onChange={v => handle("id_categoria", v)}
+                options={catOptions}
+                placeholder="Selecionar..."
+                accentColor={cor}
+                style={{ borderColor: `${cor}44` }}
+              />
             </div>
             <div className="modal-field">
               <label className="modal-label">Valor (R$)</label>
-              <input className="modal-input modal-input--valor" type="number" placeholder="0,00"
-                value={form.valor} onChange={(e) => handle("valor", e.target.value)}
+              <input className="modal-input modal-input--valor" type="number"
+                value={form.valor} onChange={e => handle("valor", e.target.value)}
                 style={{ borderColor: `${cor}44`, color: cor }} />
             </div>
           </div>
           <div className="modal-field">
-            <label className="modal-label">Descrição (opcional)</label>
-            <input className="modal-input" type="text" placeholder="Ex: Conta de luz de janeiro..."
-              value={form.descricao} onChange={(e) => handle("descricao", e.target.value)}
+            <label className="modal-label">Descrição</label>
+            <input className="modal-input" type="text"
+              value={form.descricao} onChange={e => handle("descricao", e.target.value)}
               style={{ borderColor: `${cor}44` }} />
           </div>
         </div>
@@ -275,7 +286,7 @@ function ModalLancamento({ onClose, onSaved, categorias }) {
           <button className="modal-btn-save"
             style={{ background: `${cor}22`, border: `1px solid ${cor}88`, color: cor }}
             onClick={handleSubmit} disabled={saving}>
-            {saving ? "Salvando..." : "Salvar Lançamento"}
+            {saving ? "Salvando..." : "Salvar Alterações"}
           </button>
         </div>
       </div>
@@ -288,13 +299,15 @@ export default function Historico() {
   const navigate = useNavigate();
   const [lancamentos, setLancamentos] = useState([]);
   const [categorias,  setCategorias]  = useState([]);
+  const [cartoes,     setCartoes]     = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [filtroTipo,  setFiltroTipo]  = useState("TODOS");
   const [busca,       setBusca]       = useState("");
-  const [modalAberto, setModalAberto] = useState(false);
-  const [ordemData,   setOrdemData]   = useState("desc"); // "asc" | "desc"
+  const [modalAberto,        setModalAberto]        = useState(false);
+  const [lancamentoEditando, setLancamentoEditando] = useState(null);
+  const [deletandoId,        setDeletandoId]        = useState(null);
+  const [ordemData,          setOrdemData]          = useState("desc");
 
-  // Filtro de período
   const hoje = new Date();
   const [mesFiltro, setMesFiltro] = useState("TODOS");
   const [anoFiltro, setAnoFiltro] = useState(String(hoje.getFullYear()));
@@ -317,23 +330,33 @@ export default function Historico() {
     return ["TODOS", ...Array.from(anos).sort((a, b) => b - a)];
   }, [lancamentos]);
 
-  // Escuta o FAB da navbar para abrir o modal
   useEffect(() => {
     const handler = () => setModalAberto(true);
     window.addEventListener("openLancamentoModal", handler);
     return () => window.removeEventListener("openLancamentoModal", handler);
   }, []);
 
+  const deletarLancamento = async (id) => {
+    try {
+      const r = await fetch(`${API}/lancamentos/${id}`, { method: "DELETE", headers: authHeaders() });
+      if (!r.ok) throw new Error("erro");
+      await carregar();
+    } catch { }
+    finally { setDeletandoId(null); }
+  };
+
   const carregar = async () => {
     setLoading(true);
     try {
-      const [rL, rC] = await Promise.all([
+      const [rL, rC, rCart] = await Promise.all([
         fetch(`${API}/lancamentos`, { headers: authHeaders() }),
         fetch(`${API}/categorias`,  { headers: authHeaders() }),
+        fetch(`${API}/cartoes`,     { headers: authHeaders() }),
       ]);
       if (rL.status === 401) { sessionStorage.clear(); navigate("/", { replace: true }); return; }
       setLancamentos(await rL.json());
       setCategorias(await rC.json());
+      setCartoes(rCart.ok ? await rCart.json() : []);
     } catch { }
     finally { setLoading(false); }
   };
@@ -364,11 +387,10 @@ export default function Historico() {
 
   // ── Gerar PDF ──────────────────────────────────────────────────────────────
   const gerarPDF = () => {
-    const doc = new jsPDF();
+    const doc         = new jsPDF();
     const nomeUsuario = sessionStorage.getItem("nome") || "Usuário";
-    const agora = new Date().toLocaleDateString("pt-BR");
+    const agora       = new Date().toLocaleDateString("pt-BR");
 
-    // Título e cabeçalho
     doc.setFillColor(26, 26, 26);
     doc.rect(0, 0, 210, 40, "F");
     doc.setTextColor(162, 255, 1);
@@ -381,7 +403,6 @@ export default function Historico() {
     doc.text("Extrato de Lançamentos", 14, 27);
     doc.text(`Gerado em ${agora} por ${nomeUsuario}`, 14, 34);
 
-    // Filtro aplicado
     const mesTxt  = mesFiltro  === "TODOS" ? "Todos os meses" : NOMES_MES_FILTRO.find(m => m.value === mesFiltro)?.label || mesFiltro;
     const anoTxt  = anoFiltro  === "TODOS" ? "Todos os anos"  : anoFiltro;
     const tipoTxt = filtroTipo === "TODOS" ? "Todos os tipos" : LABEL_TIPO[filtroTipo] || filtroTipo;
@@ -389,14 +410,12 @@ export default function Historico() {
     doc.setFontSize(9);
     doc.text(`Período: ${mesTxt} / ${anoTxt}  |  Tipo: ${tipoTxt}  |  ${filtrados.length} registro(s)`, 14, 46);
 
-    // Totais por tipo
     const totalEntradas  = filtrados.filter(l => l.tipo === "ENTRADA")       .reduce((s, l) => s + Number(l.valor), 0);
     const totalFixas     = filtrados.filter(l => l.tipo === "SAIDA_FIXA")    .reduce((s, l) => s + Number(l.valor), 0);
     const totalVariaveis = filtrados.filter(l => l.tipo === "SAIDA_VARIAVEL").reduce((s, l) => s + Number(l.valor), 0);
     const totalSaidas    = totalFixas + totalVariaveis;
     const saldo          = totalEntradas - totalSaidas;
 
-    // Cards de resumo
     const cards = [
       { label: "Entradas",       valor: totalEntradas,  cor: [162, 255, 1]   },
       { label: "Saídas Fixas",   valor: totalFixas,     cor: [255, 77, 77]   },
@@ -416,11 +435,9 @@ export default function Historico() {
       doc.text(formatBRL(card.valor), x + 4, startY + 13);
     });
 
-    // Linha divisória
     doc.setDrawColor(42, 42, 42);
     doc.line(14, 76, 196, 76);
 
-    // Tabela de lançamentos
     autoTable(doc, {
       startY: 80,
       head: [["Data", "Tipo", "Categoria", "Descrição", "Status", "Valor"]],
@@ -428,44 +445,30 @@ export default function Historico() {
         formatData(l.data_competencia),
         LABEL_TIPO[l.tipo] || l.tipo,
         l.categoria_nome || "—",
-        l.descricao || "—",
+        [l.descricao, l.total_parcelas > 1 ? `(${l.parcela_atual}/${l.total_parcelas}x)` : ""].filter(Boolean).join(" ") || "—",
         l.status || "—",
         `${l.tipo === "ENTRADA" ? "+" : "-"}${formatBRL(l.valor)}`,
       ]),
       styles: {
-        font: "helvetica",
-        fontSize: 8,
-        textColor: [200, 200, 200],
-        fillColor: [38, 38, 38],
-        lineColor: [42, 42, 42],
-        lineWidth: 0.1,
+        font: "helvetica", fontSize: 8,
+        textColor: [200, 200, 200], fillColor: [38, 38, 38],
+        lineColor: [42, 42, 42],   lineWidth: 0.1,
       },
-      headStyles: {
-        fillColor: [26, 26, 26],
-        textColor: [100, 100, 100],
-        fontStyle: "bold",
-        fontSize: 7,
-      },
+      headStyles: { fillColor: [26, 26, 26], textColor: [100, 100, 100], fontStyle: "bold", fontSize: 7 },
       alternateRowStyles: { fillColor: [30, 30, 30] },
       columnStyles: {
-        0: { cellWidth: 22 },
-        1: { cellWidth: 26 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 50 },
-        4: { cellWidth: 22 },
-        5: { cellWidth: 30, halign: "right" },
+        0: { cellWidth: 22 }, 1: { cellWidth: 26 }, 2: { cellWidth: 30 },
+        3: { cellWidth: 48 }, 4: { cellWidth: 22 }, 5: { cellWidth: 30, halign: "right" },
       },
       didDrawCell: (data) => {
-        // Colore o valor conforme tipo
         if (data.section === "body" && data.column.index === 5) {
           const tipo = filtrados[data.row.index]?.tipo;
-          const cor = tipo === "ENTRADA" ? [162, 255, 1] : tipo === "SAIDA_FIXA" ? [255, 77, 77] : [255, 153, 0];
+          const cor  = tipo === "ENTRADA" ? [162, 255, 1] : tipo === "SAIDA_FIXA" ? [255, 77, 77] : [255, 153, 0];
           data.doc.setTextColor(...cor);
         }
       },
     });
 
-    // Rodapé
     const totalPages = doc.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
@@ -475,9 +478,8 @@ export default function Historico() {
       doc.text(`Página ${i} de ${totalPages}`, 185, 290, { align: "right" });
     }
 
-    // Nome do arquivo
-    const mesArq  = mesFiltro  === "TODOS" ? "todos" : (NOMES_MES_FILTRO.find(m => m.value === mesFiltro)?.label || mesFiltro);
-    const anoArq  = anoFiltro  === "TODOS" ? "todos" : anoFiltro;
+    const mesArq = mesFiltro === "TODOS" ? "todos" : (NOMES_MES_FILTRO.find(m => m.value === mesFiltro)?.label || mesFiltro);
+    const anoArq = anoFiltro === "TODOS" ? "todos" : anoFiltro;
     doc.save(`extrato_hydra_${mesArq}_${anoArq}.pdf`);
   };
 
@@ -485,8 +487,44 @@ export default function Historico() {
     <div className="historico-page">
 
       {modalAberto && (
-        <ModalLancamento categorias={categorias}
-          onClose={() => setModalAberto(false)} onSaved={carregar} />
+        <ModalLancamento
+          categorias={categorias}
+          cartoes={cartoes}
+          onClose={() => setModalAberto(false)}
+          onSaved={carregar}
+        />
+      )}
+
+      {lancamentoEditando && (
+        <ModalEditar
+          lancamento={lancamentoEditando}
+          categorias={categorias}
+          onClose={() => setLancamentoEditando(null)}
+          onSaved={carregar}
+        />
+      )}
+
+      {deletandoId && (
+        <div className="modal-overlay" onClick={() => setDeletandoId(null)}>
+          <div className="modal-box" style={{ maxWidth: 380 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">Excluir lançamento?</h2>
+              <button className="modal-close" onClick={() => setDeletandoId(null)}>✕</button>
+            </div>
+            <p style={{ fontSize: 13, color: "#aaa", margin: 0 }}>
+              Esta ação não pode ser desfeita.
+            </p>
+            <div className="modal-actions" style={{ marginTop: 8 }}>
+              <button className="modal-btn-cancel" onClick={() => setDeletandoId(null)}>Cancelar</button>
+              <button
+                className="modal-btn-save"
+                style={{ background: "#ff4d4d22", border: "1px solid #ff4d4d88", color: "#ff4d4d" }}
+                onClick={() => deletarLancamento(deletandoId)}>
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="historico-header">
@@ -505,12 +543,12 @@ export default function Historico() {
         </div>
       </div>
 
-      {/* ── Gráfico Comparativo — só desktop ── */}
+      {/* Gráfico — só desktop */}
       <div className="d-none d-md-block">
         <GraficoComparativo lancamentos={lancamentos} />
       </div>
 
-      {/* ── Filtros ── */}
+      {/* Filtros */}
       <div className="historico-filters">
         <div className="filter-tabs">
           {["TODOS", "ENTRADA", "SAIDA_FIXA", "SAIDA_VARIAVEL"].map((t) => (
@@ -523,18 +561,24 @@ export default function Historico() {
           ))}
         </div>
         <div className="filter-right">
-          <select className="filter-select" value={mesFiltro} onChange={(e) => setMesFiltro(e.target.value)}>
-            {NOMES_MES_FILTRO.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-          </select>
-          <select className="filter-select" value={anoFiltro} onChange={(e) => setAnoFiltro(e.target.value)}>
-            {anosDisponiveis.map(a => <option key={a} value={a}>{a === "TODOS" ? "Todos os anos" : a}</option>)}
-          </select>
+          <CustomSelect
+            value={mesFiltro}
+            onChange={setMesFiltro}
+            options={NOMES_MES_FILTRO}
+            className="filter-select"
+          />
+          <CustomSelect
+            value={anoFiltro}
+            onChange={setAnoFiltro}
+            options={anosDisponiveis.map(a => ({ value: a, label: a === "TODOS" ? "Todos os anos" : a }))}
+            className="filter-select"
+          />
           <input className="filter-search" placeholder="Buscar por categoria..."
             value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
       </div>
 
-      {/* ── Tabela ── */}
+      {/* Tabela */}
       <div className="historico-table-wrap">
         {loading ? (
           <div className="historico-loading">Carregando...</div>
@@ -547,43 +591,69 @@ export default function Historico() {
                 <th className="th-sortable" onClick={() => setOrdemData(o => o === "desc" ? "asc" : "desc")}>
                   Data <span className="sort-icon">{ordemData === "desc" ? "↓" : "↑"}</span>
                 </th>
-                {/* Desktop: colunas separadas */}
                 <th className="d-none d-md-table-cell">Tipo</th>
                 <th className="d-none d-md-table-cell">Categoria</th>
                 <th className="d-none d-md-table-cell">Status</th>
-                {/* Mobile: coluna combinada */}
                 <th className="d-table-cell d-md-none">Tipo / Cat.</th>
                 <th className="align-right">Valor</th>
+                <th className="col-acoes d-none d-md-table-cell"></th>
               </tr>
             </thead>
             <tbody>
               {filtrados.map((l) => {
                 const cor    = COR_TIPO[l.tipo] || "#888";
                 const prefix = l.tipo === "ENTRADA" ? "+" : "-";
+                const ehParcelado = l.total_parcelas > 1;
+
                 return (
                   <tr key={l.id_lancamento} className="historico-row">
                     <td className="col-data">{formatData(l.data_competencia)}</td>
+
                     {/* Desktop */}
                     <td className="d-none d-md-table-cell">
                       <span className="tipo-badge" style={{ color: cor, background: `${cor}15`, border: `1px solid ${cor}33` }}>
                         {LABEL_TIPO[l.tipo] || l.tipo}
                       </span>
+                      {l.meio_pagamento && (
+                        <span className="pagamento-badge">
+                          {LABEL_PAGAMENTO[l.meio_pagamento] || l.meio_pagamento}
+                        </span>
+                      )}
                     </td>
-                    <td className="col-cat d-none d-md-table-cell">{l.categoria_nome || "—"}</td>
+                    <td className="col-cat d-none d-md-table-cell">
+                      <span>{l.categoria_nome || "—"}</span>
+                      {ehParcelado && (
+                        <span className="parcela-badge">{l.parcela_atual}/{l.total_parcelas}x</span>
+                      )}
+                      {l.cartao_nome && (
+                        <span className="cartao-badge">◉ {l.cartao_nome}</span>
+                      )}
+                    </td>
                     <td className="d-none d-md-table-cell">
-                      <span className={`status-badge status-badge--${(l.status || "").toLowerCase()}`}>
-                        {l.status || "—"}
+                      <span className={`status-badge status-badge--${(l.status || "pendente").toLowerCase()}`}>
+                        {l.status || "PENDENTE"}
                       </span>
                     </td>
-                    {/* Mobile: tipo + categoria empilhados */}
+
+                    {/* Mobile */}
                     <td className="d-table-cell d-md-none">
                       <span className="tipo-badge" style={{ color: cor, background: `${cor}15`, border: `1px solid ${cor}33`, display: "block", marginBottom: "3px" }}>
                         {LABEL_TIPO[l.tipo] || l.tipo}
+                        {ehParcelado && <span style={{ marginLeft: 4, opacity: 0.8 }}>{l.parcela_atual}/{l.total_parcelas}x</span>}
                       </span>
                       <span style={{ fontSize: "10px", color: "#777" }}>{l.categoria_nome || "—"}</span>
                     </td>
+
                     <td className="col-valor align-right" style={{ color: cor }}>
                       {prefix}{formatBRL(l.valor)}
+                    </td>
+                    <td className="col-acoes d-none d-md-table-cell">
+                      <div className="row-acoes">
+                        <button className="btn-acao btn-acao--edit" title="Editar"
+                          onClick={() => setLancamentoEditando(l)}>✎</button>
+                        <button className="btn-acao btn-acao--delete" title="Excluir"
+                          onClick={() => setDeletandoId(l.id_lancamento)}>✕</button>
+                      </div>
                     </td>
                   </tr>
                 );

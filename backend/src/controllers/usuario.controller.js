@@ -166,4 +166,22 @@ async function login(req, res) {
   }
 }
 
-module.exports = { criar, listar, buscarPorId, atualizar, remover, login };
+async function verificarSenha(req, res) {
+  try {
+    const id_user     = req.user.id_user;
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ erro: 'Senha obrigatória' });
+
+    const { rows } = await db.query('SELECT password FROM usuario WHERE id_user = $1', [id_user]);
+    if (!rows.length) return res.status(404).json({ erro: 'Usuário não encontrado' });
+
+    const correta = await bcrypt.compare(password, rows[0].password);
+    if (!correta) return res.status(401).json({ erro: 'Senha incorreta' });
+
+    res.json({ valido: true });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
+}
+
+module.exports = { criar, listar, buscarPorId, atualizar, remover, login, verificarSenha };

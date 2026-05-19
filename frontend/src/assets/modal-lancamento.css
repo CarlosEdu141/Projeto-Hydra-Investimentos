@@ -1,0 +1,301 @@
+/* =========================================
+   MODAL LANÇAMENTO — compartilhado
+   Usado em: home.jsx e historico.jsx
+========================================= */
+.ml-overlay {
+  position: fixed;
+  inset: 0;
+  background: #00000099;
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: ml-fadeIn 0.2s ease;
+}
+
+@keyframes ml-fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.ml-box {
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 20px;
+  padding: 32px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 92vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: ml-slideUp 0.25s ease;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+.ml-box::-webkit-scrollbar       { width: 4px; }
+.ml-box::-webkit-scrollbar-track  { background: transparent; }
+.ml-box::-webkit-scrollbar-thumb  { background: #333; border-radius: 4px; }
+
+@keyframes ml-slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.ml-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.ml-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.ml-subtitle {
+  font-size: 11px;
+  color: #555;
+  letter-spacing: 1px;
+}
+
+.ml-close {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.2s ease;
+}
+.ml-close:hover { color: #ff4d4d; }
+
+/* Tipo tabs */
+.ml-tipo-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.ml-tipo-tab {
+  flex: 1;
+  padding: 8px;
+  background: none;
+  border: 1px solid #2a2a2a;
+  color: #666;
+  border-radius: 10px;
+  font-size: 11px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+.ml-tipo-tab:hover { border-color: #444; color: #aaa; }
+
+/* Campos */
+.ml-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ml-field-group {
+  display: grid;
+  gap: 14px;
+}
+.ml-field-group--2 { grid-template-columns: 1fr 1fr; }
+
+.ml-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ml-label {
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.ml-input {
+  background: #262626;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #ccc;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+}
+.ml-input:focus         { box-shadow: 0 0 0 2px #A2FF0122; }
+.ml-input--valor        { font-weight: bold; text-align: right; }
+
+/* Forma de pagamento */
+.ml-pagamento-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ml-pagamento-tab {
+  flex: 1;
+  min-width: 70px;
+  padding: 7px 8px;
+  background: none;
+  border: 1px solid #2a2a2a;
+  color: #555;
+  border-radius: 8px;
+  font-size: 11px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+.ml-pagamento-tab:hover { border-color: #444; color: #aaa; }
+
+/* Parcelamento */
+.ml-parcelar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.ml-toggle-parcelar {
+  background: #2a2a2a;
+  border: 1px solid #333;
+  color: #555;
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 11px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+.ml-toggle-parcelar--on {
+  background: #A2FF0115;
+  border-color: #A2FF0155;
+  color: #A2FF01;
+}
+
+.ml-parcelas-wrap { animation: ml-fadeIn 0.2s ease; }
+
+.ml-pmt-preview {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 9px 12px;
+  background: #262626;
+  border: 1px solid #333;
+  border-radius: 8px;
+  min-height: 40px;
+}
+.ml-pmt-preview__valor { font-size: 14px; font-weight: bold; }
+.ml-pmt-preview__total { font-size: 10px; color: #555; margin-top: 2px; }
+
+/* Checkbox juros */
+.ml-juros-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #aaa;
+  cursor: pointer;
+  user-select: none;
+}
+.ml-juros-check input[type="checkbox"] {
+  accent-color: #ff9900;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ml-juros-taxa { color: #ff9900; font-size: 11px; }
+
+/* Sem cartão */
+.ml-sem-cartao {
+  font-size: 11px;
+  color: #ff9900;
+  background: #ff990010;
+  border: 1px solid #ff990033;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
+
+/* Erro */
+.ml-erro {
+  background: #ff4d4d11;
+  border: 1px solid #ff4d4d44;
+  color: #ff4d4d;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+}
+
+/* Ações */
+.ml-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.ml-btn-cancel {
+  background: none;
+  border: 1px solid #333;
+  color: #666;
+  border-radius: 10px;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.ml-btn-cancel:hover { border-color: #555; color: #aaa; }
+
+.ml-btn-save {
+  border-radius: 10px;
+  padding: 9px 24px;
+  font-size: 13px;
+  font-weight: bold;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.ml-btn-save:hover    { filter: brightness(1.2); }
+.ml-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Mobile ── */
+@media (max-width: 767px) {
+  .ml-overlay { align-items: flex-end; }
+
+  .ml-box {
+    border-radius: 20px 20px 0 0;
+    padding: 20px 16px 36px;
+    max-width: 100%;
+    max-height: 88vh;
+    gap: 16px;
+  }
+
+  .ml-field-group--2 { grid-template-columns: 1fr; }
+
+  .ml-input {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .ml-actions       { justify-content: stretch; }
+  .ml-btn-cancel,
+  .ml-btn-save      { flex: 1; padding: 12px; font-size: 14px; }
+}

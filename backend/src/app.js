@@ -6,6 +6,7 @@ const usuarioRoutes     = require('./routes/usuario.routes');
 const pessoaRoutes      = require('./routes/pessoa.routes');
 const contaRoutes       = require('./routes/conta.routes');
 const lancamentoRoutes  = require('./routes/lancamento.routes');
+const cartaoRoutes      = require('./routes/cartao.routes');
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use('/pessoas',     pessoaRoutes);
 app.use('/usuarios',    usuarioRoutes);
 app.use('/contas',      contaRoutes);
 app.use('/lancamentos', lancamentoRoutes);
+app.use('/cartoes',     cartaoRoutes);
 
 /* HEALTH CHECK */
 app.get("/health", (req, res) => {
