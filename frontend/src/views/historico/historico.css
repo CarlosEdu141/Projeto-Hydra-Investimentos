@@ -677,6 +677,130 @@
   margin: 8px 0;
 }
 
+/* ── Popup de seleção de gráfico ── */
+.popup-graficos {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 220px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  animation: cs-fade 0.15s ease;
+}
+
+.popup-graficos__title {
+  font-size: 10px;
+  color: #444;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 8px 8px;
+  margin: 0;
+}
+
+.popup-graficos__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.popup-graficos__item:hover { background: #2a2a2a; }
+
+.popup-graficos__item strong {
+  display: block;
+  font-size: 13px;
+  color: #ddd;
+  margin-bottom: 2px;
+  font-weight: bold;
+}
+
+.popup-graficos__item span {
+  font-size: 11px;
+  color: #555;
+}
+
+/* ── Gráfico pizza / rosca ── */
+.pizza-layout {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.pizza-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+.pizza-legend::-webkit-scrollbar       { width: 4px; }
+.pizza-legend::-webkit-scrollbar-track  { background: transparent; }
+.pizza-legend::-webkit-scrollbar-thumb  { background: #333; border-radius: 4px; }
+
+.pizza-legend__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid #1e1e1e;
+}
+
+.pizza-legend__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.pizza-legend__name {
+  flex: 1;
+  font-size: 12px;
+  color: #ccc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pizza-legend__val {
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.pizza-legend__pct {
+  font-size: 11px;
+  color: #555;
+  width: 38px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.pizza-legend__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666;
+  font-weight: bold;
+}
+
 /* ── Filtros direita ── */
 .filter-right {
   display: flex;

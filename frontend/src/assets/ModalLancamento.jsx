@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import DatePicker from "./DatePicker";
 import CustomSelect from "./CustomSelect";
 import "./modal-lancamento.css";
@@ -118,7 +119,7 @@ export default function ModalLancamento({ onClose, onSaved, categorias, cartoes 
     finally  { setSaving(false); }
   };
 
-  return (
+  return createPortal(
     <div className="ml-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="ml-box">
 
@@ -279,6 +280,7 @@ export default function ModalLancamento({ onClose, onSaved, categorias, cartoes 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

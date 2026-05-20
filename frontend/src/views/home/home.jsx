@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Children } from "react";
 import { useNavigate } from "react-router-dom";
 import ModalLancamento from "../../assets/ModalLancamento";
 import CustomSelect from "../../assets/CustomSelect";
@@ -366,8 +366,19 @@ function AddRow({ tipo, categorias, onAdd, saving }) {
 }
 
 // ── TableCard ─────────────────────────────────────────────────────────────────
+const ROW_LIMIT = 5;
+
 function TableCard({ title, subtitle, total, tipo, loading, children }) {
+  const [expanded, setExpanded] = useState(false);
   const color = COR[tipo];
+
+  const allFlat = Children.toArray(children);
+  const addRow  = allFlat[allFlat.length - 1];
+  const rows    = allFlat.slice(0, -1);
+  const hasMore = rows.length > ROW_LIMIT;
+  const shown   = !expanded && hasMore ? rows.slice(0, ROW_LIMIT) : rows;
+  const hidden  = hasMore ? rows.length - ROW_LIMIT : 0;
+
   return (
     <div
       className="table-card"
@@ -395,10 +406,24 @@ function TableCard({ title, subtitle, total, tipo, loading, children }) {
                 <th></th>
               </tr>
             </thead>
-            <tbody>{children}</tbody>
+            <tbody>
+              {shown}
+              {addRow}
+            </tbody>
           </table>
         )}
       </div>
+      {hasMore && !loading && (
+        <button
+          className="table-card__more"
+          style={{ color: `${color}88`, borderTopColor: `${color}18` }}
+          onClick={() => setExpanded(e => !e)}
+        >
+          {expanded
+            ? "↑ Mostrar menos"
+            : `↓ Ver mais ${hidden} lançamento${hidden !== 1 ? "s" : ""}`}
+        </button>
+      )}
     </div>
   );
 }

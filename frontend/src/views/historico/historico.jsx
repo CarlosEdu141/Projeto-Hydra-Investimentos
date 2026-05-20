@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -6,7 +6,8 @@ import DatePicker from "../../assets/DatePicker";
 import CustomSelect from "../../assets/CustomSelect";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer
+  Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell,
 } from "recharts";
 import ModalLancamento from "../../assets/ModalLancamento";
 import "./historico.css";
@@ -51,11 +52,130 @@ const LABEL_PAGAMENTO = {
   CREDITO:  "Crédito",
 };
 
+const PIE_COLORS = [
+  "#A2FF01", "#00d4ff", "#b44dff", "#ff6b9d",
+  "#ffd700", "#4dffb4", "#ff6b35", "#00b4d8", "#ff4dff", "#7ec8e3",
+];
+
 const CAT_PADRAO = {
   ENTRADA:        ["Salário","Freelance","Dividendos","Aluguel recebido","Rendimento","Outros (entrada)"],
   SAIDA_FIXA:     ["Luz","Água","Internet","Aluguel","Supermercado","Matrícula","Plano de saúde","Combustível","Outros (fixo)"],
   SAIDA_VARIAVEL: ["Lazer","Restaurante","Roupas","Viagem","Farmácia","Beleza","Delivery","Assinatura","Presente","Outros (variável)"],
 };
+
+// ── Tooltip pizza ────────────────────────────────────────────────────────────
+function CustomTooltipPizza({ active, payload, total }) {
+  if (!active || !payload?.length) return null;
+  const { name, value, payload: { fill } } = payload[0];
+  const pct = total > 0 ? ((value / total) * 100).toFixed(1) : "0";
+  return (
+    <div className="chart-tooltip">
+      <p className="chart-tooltip__mes">{name}</p>
+      <div className="chart-tooltip__row">
+        <span className="chart-tooltip__dot" style={{ background: fill }} />
+        <span className="chart-tooltip__val" style={{ color: fill }}>{formatBRL(value)}</span>
+        <span className="chart-tooltip__label" style={{ marginLeft: 6 }}>{pct}%</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Gráfico Pizza / Rosca ─────────────────────────────────────────────────────
+function GraficoPizza({ lancamentos, tipo, mesFiltro, anoFiltro, onTipoChange, onVoltar }) {
+  const cor    = tipo === "SAIDA_FIXA" ? "#ff4d4d" : "#ff9900";
+  const titulo = tipo === "SAIDA_FIXA" ? "Top Gastos Fixos" : "Top Gastos Variáveis";
+  const hoje   = new Date();
+
+  const dados = useMemo(() => {
+    const mes = mesFiltro === "TODOS" ? hoje.getMonth()    : Number(mesFiltro);
+    const ano = anoFiltro === "TODOS" ? hoje.getFullYear() : Number(anoFiltro);
+
+    const grouped = {};
+    lancamentos
+      .filter(l => {
+        if (l.tipo !== tipo) return false;
+        const d = new Date(l.data_competencia || l.dt_criacao);
+        return d.getMonth() === mes && d.getFullYear() === ano;
+      })
+      .forEach(l => {
+        const cat = l.categoria_nome || "Outros";
+        grouped[cat] = (grouped[cat] || 0) + Number(l.valor);
+      });
+
+    return Object.entries(grouped)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [lancamentos, tipo, mesFiltro, anoFiltro]);
+
+  const total = dados.reduce((s, d) => s + d.value, 0);
+
+  const mesLabel = mesFiltro === "TODOS"
+    ? `${NOMES_MES[hoje.getMonth()]}/${hoje.getFullYear()}`
+    : `${NOMES_MES[Number(mesFiltro)]}${anoFiltro !== "TODOS" ? `/${anoFiltro}` : ""}`;
+
+  return (
+    <div className="grafico-card">
+      <div className="grafico-card__header">
+        <div>
+          <span className="grafico-card__title" style={{ color: cor }}>{titulo}</span>
+          <span className="grafico-card__subtitle">
+            {dados.length} categoria{dados.length !== 1 ? "s" : ""} · {mesLabel}
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <button
+            className={`periodo-tab${tipo === "SAIDA_VARIAVEL" ? " periodo-tab--active" : ""}`}
+            style={tipo === "SAIDA_VARIAVEL" ? { borderColor: "#ff990066", color: "#ff9900", background: "#ff990012" } : {}}
+            onClick={() => onTipoChange("SAIDA_VARIAVEL")}
+          >Variáveis</button>
+          <button
+            className={`periodo-tab${tipo === "SAIDA_FIXA" ? " periodo-tab--active" : ""}`}
+            style={tipo === "SAIDA_FIXA" ? { borderColor: "#ff4d4d66", color: "#ff4d4d", background: "#ff4d4d12" } : {}}
+            onClick={() => onTipoChange("SAIDA_FIXA")}
+          >Fixos</button>
+          <button className="periodo-tab" onClick={onVoltar}>← Comparativo</button>
+        </div>
+      </div>
+
+      {dados.length === 0 ? (
+        <div className="grafico-empty">Sem gastos registrados para o período selecionado</div>
+      ) : (
+        <div className="pizza-layout">
+          <ResponsiveContainer width={280} height={260}>
+            <PieChart>
+              <Pie data={dados} cx="50%" cy="50%"
+                innerRadius={72} outerRadius={112} paddingAngle={2} dataKey="value">
+                {dados.map((_, i) => (
+                  <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltipPizza total={total} />} />
+            </PieChart>
+          </ResponsiveContainer>
+
+          <div className="pizza-legend">
+            {dados.map((item, i) => {
+              const color = PIE_COLORS[i % PIE_COLORS.length];
+              const pct   = total > 0 ? ((item.value / total) * 100).toFixed(1) : "0";
+              return (
+                <div key={item.name} className="pizza-legend__row">
+                  <span className="pizza-legend__dot" style={{ background: color }} />
+                  <span className="pizza-legend__name">{item.name}</span>
+                  <span className="pizza-legend__val" style={{ color }}>{formatBRL(item.value)}</span>
+                  <span className="pizza-legend__pct">{pct}%</span>
+                </div>
+              );
+            })}
+            <div className="pizza-legend__total">
+              <span>Total</span>
+              <span style={{ color: cor }}>{formatBRL(total)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Tooltip customizado do gráfico ────────────────────────────────────────────
 function CustomTooltip({ active, payload, label }) {
@@ -85,8 +205,23 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 // ── Gráfico comparativo ───────────────────────────────────────────────────────
-function GraficoComparativo({ lancamentos }) {
-  const [periodo, setPeriodo] = useState(6);
+function GraficoComparativo({ lancamentos, onOutrosGraficos }) {
+  const [periodo,   setPeriodo]  = useState(6);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const btnRef   = useRef(null);
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    if (!popupOpen) return;
+    const handler = e => {
+      if (!btnRef.current?.contains(e.target) && !panelRef.current?.contains(e.target))
+        setPopupOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [popupOpen]);
+
+  const selectGrafico = (tipo) => { setPopupOpen(false); onOutrosGraficos(tipo); };
 
   const dados = useMemo(() => {
     const hoje = new Date();
@@ -126,16 +261,44 @@ function GraficoComparativo({ lancamentos }) {
           <span className="grafico-card__title">Comparativo Mensal</span>
           <span className="grafico-card__subtitle">Entradas, saídas e saldo por mês</span>
         </div>
-        <div className="periodo-tabs">
-          {[3, 6, 12].map((p) => (
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <div className="periodo-tabs">
+            {[3, 6, 12].map((p) => (
+              <button
+                key={p}
+                className={`periodo-tab${periodo === p ? " periodo-tab--active" : ""}`}
+                onClick={() => setPeriodo(p)}
+              >
+                {p}M
+              </button>
+            ))}
+          </div>
+          <div style={{ position: "relative" }}>
             <button
-              key={p}
-              className={`periodo-tab${periodo === p ? " periodo-tab--active" : ""}`}
-              onClick={() => setPeriodo(p)}
-            >
-              {p}M
-            </button>
-          ))}
+              ref={btnRef}
+              className={`periodo-tab${popupOpen ? " periodo-tab--active" : ""}`}
+              onClick={() => setPopupOpen(o => !o)}
+            >Outros ▾</button>
+            {popupOpen && (
+              <div ref={panelRef} className="popup-graficos">
+                <p className="popup-graficos__title">Trocar gráfico</p>
+                <button className="popup-graficos__item" onClick={() => selectGrafico("SAIDA_VARIAVEL")}>
+                  <span style={{ color: "#ff9900", fontSize: 20, lineHeight: 1 }}>◔</span>
+                  <div>
+                    <strong>Top Gastos Variáveis</strong>
+                    <span>Distribuição por categoria</span>
+                  </div>
+                </button>
+                <button className="popup-graficos__item" onClick={() => selectGrafico("SAIDA_FIXA")}>
+                  <span style={{ color: "#ff4d4d", fontSize: 20, lineHeight: 1 }}>◔</span>
+                  <div>
+                    <strong>Top Gastos Fixos</strong>
+                    <span>Distribuição por categoria</span>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -307,6 +470,7 @@ export default function Historico() {
   const [lancamentoEditando, setLancamentoEditando] = useState(null);
   const [deletandoId,        setDeletandoId]        = useState(null);
   const [ordemData,          setOrdemData]          = useState("desc");
+  const [graficoAtivo,       setGraficoAtivo]       = useState("comparativo");
 
   const hoje = new Date();
   const [mesFiltro, setMesFiltro] = useState("TODOS");
@@ -545,7 +709,21 @@ export default function Historico() {
 
       {/* Gráfico — só desktop */}
       <div className="d-none d-md-block">
-        <GraficoComparativo lancamentos={lancamentos} />
+        {graficoAtivo === "comparativo" ? (
+          <GraficoComparativo
+            lancamentos={lancamentos}
+            onOutrosGraficos={(tipo) => setGraficoAtivo(tipo)}
+          />
+        ) : (
+          <GraficoPizza
+            lancamentos={lancamentos}
+            tipo={graficoAtivo}
+            mesFiltro={mesFiltro}
+            anoFiltro={anoFiltro}
+            onTipoChange={(tipo) => setGraficoAtivo(tipo)}
+            onVoltar={() => setGraficoAtivo("comparativo")}
+          />
+        )}
       </div>
 
       {/* Filtros */}
