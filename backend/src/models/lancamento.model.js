@@ -10,10 +10,11 @@ function derivarNatureza(tipo) {
   return tipo === 'SAIDA_VARIAVEL' ? 'VARIAVEL' : 'FIXA';
 }
 
-// Pagamentos imediatos = PAGO; crédito/ausente = PENDENTE
-function derivarStatus(meio_pagamento) {
-  const pagosNaHora = ['DINHEIRO', 'PIX', 'DEBITO'];
-  return pagosNaHora.includes(meio_pagamento) ? 'PAGO' : 'PENDENTE';
+// Entrada sempre PAGO; crédito = PENDENTE; qualquer outro caso (sem meio ou pagamento imediato) = PAGO
+function derivarStatus(tipo, meio_pagamento) {
+  if (tipo === 'ENTRADA') return 'PAGO';
+  if (meio_pagamento === 'CREDITO') return 'PENDENTE';
+  return 'PAGO';
 }
 
 const SQL_INSERT = `
@@ -36,7 +37,7 @@ function buildParams(dados) {
     derivarNatureza(dados.tipo),
     dados.meio_pagamento               || null,
     dados.recorrente                   || false,
-    derivarStatus(dados.meio_pagamento),
+    derivarStatus(dados.tipo, dados.meio_pagamento),
     dados.data_lancamento              || new Date().toISOString().split('T')[0],
     toIntOrNull(dados.id_cartao),
     dados.grupo_parcelas               || null,
@@ -101,6 +102,8 @@ async function listarLancamentos({ tipo, id_user } = {}) {
 }
 
 async function atualizarLancamento(id_lancamento, id_user, dados) {
+  const statusFinal = dados.tipo === 'ENTRADA' ? 'PAGO' : (dados.status || 'PENDENTE');
+
   return db.query(
     `UPDATE lancamento
      SET descricao       = $1,
@@ -115,7 +118,7 @@ async function atualizarLancamento(id_lancamento, id_user, dados) {
       dados.valor,
       dados.id_categoria || null,
       dados.data_lancamento,
-      dados.status       || 'PENDENTE',
+      statusFinal,
       id_lancamento,
       id_user,
     ]

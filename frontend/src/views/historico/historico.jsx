@@ -370,7 +370,7 @@ function ModalEditar({ lancamento, categorias, onClose, onSaved }) {
     try {
       const r = await fetch(`${API}/lancamentos/${lancamento.id_lancamento}`, {
         method: "PUT", headers: authHeaders(),
-        body: JSON.stringify({ ...form, valor: parseFloat(form.valor) }),
+        body: JSON.stringify({ ...form, valor: parseFloat(form.valor), tipo: lancamento.tipo }),
       });
       if (!r.ok) throw new Error("erro");
       await onSaved();
@@ -395,7 +395,7 @@ function ModalEditar({ lancamento, categorias, onClose, onSaved }) {
         </div>
 
         <div className="modal-fields">
-          <div className="modal-field-group modal-field-group--2">
+          <div className={`modal-field-group${lancamento.tipo !== "ENTRADA" ? " modal-field-group--2" : ""}`}>
             <div className="modal-field">
               <label className="modal-label">Data</label>
               <DatePicker
@@ -404,16 +404,18 @@ function ModalEditar({ lancamento, categorias, onClose, onSaved }) {
                 accentColor={cor}
               />
             </div>
-            <div className="modal-field">
-              <label className="modal-label">Status</label>
-              <CustomSelect
-                value={form.status}
-                onChange={v => handle("status", v)}
-                options={[{ value: "PAGO", label: "PAGO" }, { value: "PENDENTE", label: "PENDENTE" }]}
-                accentColor={cor}
-                style={{ borderColor: `${cor}44` }}
-              />
-            </div>
+            {lancamento.tipo !== "ENTRADA" && (
+              <div className="modal-field">
+                <label className="modal-label">Status</label>
+                <CustomSelect
+                  value={form.status}
+                  onChange={v => handle("status", v)}
+                  options={[{ value: "PAGO", label: "PAGO" }, { value: "PENDENTE", label: "PENDENTE" }]}
+                  accentColor={cor}
+                  style={{ borderColor: `${cor}44` }}
+                />
+              </div>
+            )}
           </div>
           <div className="modal-field-group modal-field-group--2">
             <div className="modal-field">
