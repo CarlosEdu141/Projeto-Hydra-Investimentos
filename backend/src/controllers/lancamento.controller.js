@@ -93,15 +93,18 @@ async function listar(req, res) {
 
 async function deletar(req, res) {
   try {
-    const { id }   = req.params;
-    const id_user  = req.user.id_user;
+    const { id }           = req.params;
+    const id_user          = req.user.id_user;
+    const { subsequentes } = req.query;
 
-    const { rows } = await LancamentoModel.deletarLancamento(id, id_user);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ erro: 'Lançamento não encontrado' });
+    if (subsequentes === 'true') {
+      const { rows } = await LancamentoModel.deletarSubsequentes(id, id_user);
+      if (!rows.length) return res.status(404).json({ erro: 'Lançamento não encontrado' });
+      return res.json({ mensagem: `${rows.length} parcela(s) removida(s)`, lancamentos: rows });
     }
 
+    const { rows } = await LancamentoModel.deletarLancamento(id, id_user);
+    if (rows.length === 0) return res.status(404).json({ erro: 'Lançamento não encontrado' });
     res.json({ mensagem: 'Lançamento removido com sucesso', lancamento: rows[0] });
   } catch (err) {
     console.error('Erro ao deletar lançamento:', err);
@@ -111,8 +114,15 @@ async function deletar(req, res) {
 
 async function atualizar(req, res) {
   try {
-    const { id }   = req.params;
-    const id_user  = req.user.id_user;
+    const { id }    = req.params;
+    const id_user   = req.user.id_user;
+    const { grupo } = req.query;
+
+    if (grupo === 'true') {
+      const { rows } = await LancamentoModel.atualizarGrupo(id, id_user, req.body);
+      if (!rows.length) return res.status(404).json({ erro: 'Lançamento não encontrado' });
+      return res.json(rows);
+    }
 
     const { rows } = await LancamentoModel.atualizarLancamento(id, id_user, req.body);
     if (!rows.length) return res.status(404).json({ erro: 'Lançamento não encontrado' });

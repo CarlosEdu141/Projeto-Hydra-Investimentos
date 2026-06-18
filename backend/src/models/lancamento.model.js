@@ -134,4 +134,40 @@ async function deletarLancamento(id_lancamento, id_user) {
   return db.query(sql, [id_lancamento, id_user]);
 }
 
-module.exports = { criarLancamento, criarLote, listarLancamentos, atualizarLancamento, deletarLancamento };
+// Deleta a parcela atual + todas com parcela_atual maior no mesmo grupo
+async function deletarSubsequentes(id_lancamento, id_user) {
+  return db.query(`
+    WITH alvo AS (
+      SELECT grupo_parcelas, parcela_atual
+      FROM lancamento
+      WHERE id_lancamento = $1 AND id_user = $2
+    )
+    DELETE FROM lancamento
+    WHERE id_user = $2
+      AND grupo_parcelas IS NOT NULL
+      AND grupo_parcelas = (SELECT grupo_parcelas FROM alvo)
+      AND parcela_atual >= (SELECT parcela_atual FROM alvo)
+    RETURNING *
+  `, [id_lancamento, id_user]);
+}
+
+// Atualiza valor/categoria/descrição/status de todas as parcelas do mesmo grupo
+async function atualizarGrupo(id_lancamento, id_user, dados) {
+  const statusFinal = dados.tipo === 'ENTRADA' ? 'PAGO' : (dados.status || 'PENDENTE');
+  return db.query(`
+    WITH alvo AS (
+      SELECT grupo_parcelas FROM lancamento WHERE id_lancamento = $1 AND id_user = $2
+    )
+    UPDATE lancamento
+    SET descricao    = $3,
+        valor        = $4,
+        id_categoria = $5,
+        status       = $6
+    WHERE id_user        = $2
+      AND grupo_parcelas IS NOT NULL
+      AND grupo_parcelas = (SELECT grupo_parcelas FROM alvo)
+    RETURNING *
+  `, [id_lancamento, id_user, dados.descricao || null, dados.valor, dados.id_categoria || null, statusFinal]);
+}
+
+module.exports = { criarLancamento, criarLote, listarLancamentos, atualizarLancamento, deletarLancamento, deletarSubsequentes, atualizarGrupo };

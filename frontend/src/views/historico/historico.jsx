@@ -144,7 +144,9 @@ function GraficoPizza({ lancamentos, tipo, mesFiltro, anoFiltro, onTipoChange, o
           <ResponsiveContainer width={280} height={260}>
             <PieChart>
               <Pie data={dados} cx="50%" cy="50%"
-                innerRadius={72} outerRadius={112} paddingAngle={2} dataKey="value">
+                innerRadius={72} outerRadius={112} paddingAngle={2} dataKey="value"
+                stroke="none"
+                activeShape={(_props) => <g />}>
                 {dados.map((_, i) => (
                   <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                 ))}
@@ -338,7 +340,8 @@ function GraficoComparativo({ lancamentos, onOutrosGraficos }) {
 
 // ── Modal de Edição ───────────────────────────────────────────────────────────
 function ModalEditar({ lancamento, categorias, onClose, onSaved }) {
-  const cor = COR_TIPO[lancamento.tipo] || "#888";
+  const cor         = COR_TIPO[lancamento.tipo] || "#888";
+  const ehParcelado = lancamento.total_parcelas > 1 && lancamento.grupo_parcelas;
 
   const catOptions = useMemo(() => {
     const fromApi = categorias.filter(c => c.tipo === lancamento.tipo);
@@ -347,15 +350,16 @@ function ModalEditar({ lancamento, categorias, onClose, onSaved }) {
       : CAT_PADRAO[lancamento.tipo]?.map(n => ({ label: n, value: n })) || [];
   }, [categorias, lancamento.tipo]);
 
-  const [form,   setForm]   = useState({
+  const [form,          setForm]          = useState({
     descricao:       lancamento.descricao       || "",
     valor:           lancamento.valor           || "",
     id_categoria:    lancamento.id_categoria    || "",
     data_lancamento: (lancamento.data_competencia || "").split("T")[0],
     status:          lancamento.status          || "PENDENTE",
   });
-  const [saving, setSaving] = useState(false);
-  const [erro,   setErro]   = useState(null);
+  const [saving,        setSaving]        = useState(false);
+  const [erro,          setErro]          = useState(null);
+  const [mostraConfirm, setMostraConfirm] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -364,11 +368,19 @@ function ModalEditar({ lancamento, categorias, onClose, onSaved }) {
 
   const handle = (field, val) => setForm(f => ({ ...f, [field]: val }));
 
-  const handleSubmit = async () => {
+  const iniciarSalvar = () => {
     if (!form.valor || isNaN(parseFloat(form.valor))) { setErro("Informe um valor válido."); return; }
-    setSaving(true); setErro(null);
+    if (ehParcelado) { setMostraConfirm(true); return; }
+    salvar(false);
+  };
+
+  const salvar = async (grupo) => {
+    setSaving(true); setErro(null); setMostraConfirm(false);
+    const url = grupo
+      ? `${API}/lancamentos/${lancamento.id_lancamento}?grupo=true`
+      : `${API}/lancamentos/${lancamento.id_lancamento}`;
     try {
-      const r = await fetch(`${API}/lancamentos/${lancamento.id_lancamento}`, {
+      const r = await fetch(url, {
         method: "PUT", headers: authHeaders(),
         body: JSON.stringify({ ...form, valor: parseFloat(form.valor), tipo: lancamento.tipo }),
       });
@@ -444,16 +456,36 @@ function ModalEditar({ lancamento, categorias, onClose, onSaved }) {
           </div>
         </div>
 
-        {erro && <div className="modal-erro">{erro}</div>}
+        {!mostraConfirm && erro && <div className="modal-erro">{erro}</div>}
 
-        <div className="modal-actions">
-          <button className="modal-btn-cancel" onClick={onClose}>Cancelar</button>
-          <button className="modal-btn-save"
-            style={{ background: `${cor}22`, border: `1px solid ${cor}88`, color: cor }}
-            onClick={handleSubmit} disabled={saving}>
-            {saving ? "Salvando..." : "Salvar Alterações"}
-          </button>
-        </div>
+        {mostraConfirm ? (
+          <div className="modal-confirm-grupo">
+            <p className="modal-confirm-grupo__msg">
+              Esta é a parcela <strong>{lancamento.parcela_atual}/{lancamento.total_parcelas}</strong>.
+              Deseja aplicar as alterações às demais parcelas do grupo?
+            </p>
+            <div className="modal-actions">
+              <button className="modal-btn-cancel" onClick={() => setMostraConfirm(false)}>Voltar</button>
+              <button className="modal-btn-cancel" onClick={() => salvar(false)} disabled={saving}>
+                Só esta
+              </button>
+              <button className="modal-btn-save"
+                style={{ background: `${cor}22`, border: `1px solid ${cor}88`, color: cor }}
+                onClick={() => salvar(true)} disabled={saving}>
+                {saving ? "Salvando..." : "Todas as parcelas"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="modal-actions">
+            <button className="modal-btn-cancel" onClick={onClose}>Cancelar</button>
+            <button className="modal-btn-save"
+              style={{ background: `${cor}22`, border: `1px solid ${cor}88`, color: cor }}
+              onClick={iniciarSalvar} disabled={saving}>
+              {saving ? "Salvando..." : "Salvar Alterações"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -470,9 +502,12 @@ export default function Historico() {
   const [busca,       setBusca]       = useState("");
   const [modalAberto,        setModalAberto]        = useState(false);
   const [lancamentoEditando, setLancamentoEditando] = useState(null);
-  const [deletandoId,        setDeletandoId]        = useState(null);
   const [ordemData,          setOrdemData]          = useState("desc");
   const [graficoAtivo,       setGraficoAtivo]       = useState("comparativo");
+  const [deletandoLanc,      setDeletandoLanc]      = useState(null);
+  const [selectedIds,        setSelectedIds]        = useState(new Set());
+  const [bulkDeleteConfirm,  setBulkDeleteConfirm]  = useState(false);
+  const checkAllRef = useRef(null);
 
   const hoje = new Date();
   const [mesFiltro, setMesFiltro] = useState("TODOS");
@@ -502,13 +537,16 @@ export default function Historico() {
     return () => window.removeEventListener("openLancamentoModal", handler);
   }, []);
 
-  const deletarLancamento = async (id) => {
+  const deletarLancamento = async (id, subsequentes = false) => {
     try {
-      const r = await fetch(`${API}/lancamentos/${id}`, { method: "DELETE", headers: authHeaders() });
+      const url = subsequentes
+        ? `${API}/lancamentos/${id}?subsequentes=true`
+        : `${API}/lancamentos/${id}`;
+      const r = await fetch(url, { method: "DELETE", headers: authHeaders() });
       if (!r.ok) throw new Error("erro");
       await carregar();
     } catch { }
-    finally { setDeletandoId(null); }
+    finally { setDeletandoLanc(null); }
   };
 
   const carregar = async () => {
@@ -524,7 +562,7 @@ export default function Historico() {
       setCategorias(await rC.json());
       setCartoes(rCart.ok ? await rCart.json() : []);
     } catch { }
-    finally { setLoading(false); }
+    finally { setLoading(false); setSelectedIds(new Set()); }
   };
 
   useEffect(() => {
@@ -550,6 +588,42 @@ export default function Historico() {
         return ordemData === "desc" ? dB - dA : dA - dB;
       });
   }, [lancamentos, filtroTipo, busca, mesFiltro, anoFiltro, ordemData]);
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds(
+      selectedIds.size === filtrados.length
+        ? new Set()
+        : new Set(filtrados.map(l => l.id_lancamento))
+    );
+  };
+
+  const bulkDelete = async () => {
+    try {
+      await Promise.all(
+        [...selectedIds].map(id =>
+          fetch(`${API}/lancamentos/${id}`, { method: "DELETE", headers: authHeaders() })
+        )
+      );
+      setBulkDeleteConfirm(false);
+      await carregar();
+    } catch { }
+  };
+
+  useEffect(() => {
+    if (!checkAllRef.current) return;
+    const all  = filtrados.length > 0 && selectedIds.size === filtrados.length;
+    const some = selectedIds.size > 0 && selectedIds.size < filtrados.length;
+    checkAllRef.current.checked       = all;
+    checkAllRef.current.indeterminate = some;
+  }, [selectedIds, filtrados]);
 
   // ── Gerar PDF ──────────────────────────────────────────────────────────────
   const gerarPDF = () => {
@@ -670,23 +744,74 @@ export default function Historico() {
         />
       )}
 
-      {deletandoId && (
-        <div className="modal-overlay" onClick={() => setDeletandoId(null)}>
-          <div className="modal-box" style={{ maxWidth: 380 }} onClick={e => e.stopPropagation()}>
+      {deletandoLanc && (
+        <div className="modal-overlay" onClick={() => setDeletandoLanc(null)}>
+          <div className="modal-box" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">Excluir lançamento?</h2>
-              <button className="modal-close" onClick={() => setDeletandoId(null)}>✕</button>
+              <button className="modal-close" onClick={() => setDeletandoLanc(null)}>✕</button>
+            </div>
+
+            {deletandoLanc.grupo_parcelas ? (
+              <>
+                <p style={{ fontSize: 13, color: "#aaa", margin: 0 }}>
+                  Esta é a parcela{" "}
+                  <strong style={{ color: "#fff" }}>
+                    {deletandoLanc.parcela_atual}/{deletandoLanc.total_parcelas}
+                  </strong>
+                  . Ao excluir esta e as subsequentes, elas serão removidas permanentemente.
+                </p>
+                <div className="modal-actions" style={{ marginTop: 8 }}>
+                  <button className="modal-btn-cancel" onClick={() => setDeletandoLanc(null)}>Cancelar</button>
+                  <button className="modal-btn-save"
+                    style={{ background: "#ff4d4d22", border: "1px solid #ff4d4d88", color: "#ff4d4d" }}
+                    onClick={() => deletarLancamento(deletandoLanc.id_lancamento, false)}>
+                    Só esta
+                  </button>
+                  <button className="modal-btn-save"
+                    style={{ background: "#ff4d4d22", border: "1px solid #ff4d4d88", color: "#ff4d4d" }}
+                    onClick={() => deletarLancamento(deletandoLanc.id_lancamento, true)}>
+                    Esta e as seguintes
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 13, color: "#aaa", margin: 0 }}>
+                  Esta ação não pode ser desfeita.
+                </p>
+                <div className="modal-actions" style={{ marginTop: 8 }}>
+                  <button className="modal-btn-cancel" onClick={() => setDeletandoLanc(null)}>Cancelar</button>
+                  <button className="modal-btn-save"
+                    style={{ background: "#ff4d4d22", border: "1px solid #ff4d4d88", color: "#ff4d4d" }}
+                    onClick={() => deletarLancamento(deletandoLanc.id_lancamento)}>
+                    Excluir
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {bulkDeleteConfirm && (
+        <div className="modal-overlay" onClick={() => setBulkDeleteConfirm(false)}>
+          <div className="modal-box" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">
+                Excluir {selectedIds.size} lançamento{selectedIds.size !== 1 ? "s" : ""}?
+              </h2>
+              <button className="modal-close" onClick={() => setBulkDeleteConfirm(false)}>✕</button>
             </div>
             <p style={{ fontSize: 13, color: "#aaa", margin: 0 }}>
               Esta ação não pode ser desfeita.
             </p>
             <div className="modal-actions" style={{ marginTop: 8 }}>
-              <button className="modal-btn-cancel" onClick={() => setDeletandoId(null)}>Cancelar</button>
-              <button
-                className="modal-btn-save"
+              <button className="modal-btn-cancel" onClick={() => setBulkDeleteConfirm(false)}>Cancelar</button>
+              <button className="modal-btn-save"
                 style={{ background: "#ff4d4d22", border: "1px solid #ff4d4d88", color: "#ff4d4d" }}
-                onClick={() => deletarLancamento(deletandoId)}>
-                Excluir
+                onClick={bulkDelete}>
+                Excluir tudo
               </button>
             </div>
           </div>
@@ -758,6 +883,23 @@ export default function Historico() {
         </div>
       </div>
 
+      {/* Barra de seleção em massa */}
+      {selectedIds.size > 0 && (
+        <div className="sel-bar">
+          <span className="sel-bar__count">
+            {selectedIds.size} selecionado{selectedIds.size !== 1 ? "s" : ""}
+          </span>
+          <div className="sel-bar__actions">
+            <button className="sel-bar__cancel" onClick={() => setSelectedIds(new Set())}>
+              Cancelar
+            </button>
+            <button className="sel-bar__delete" onClick={() => setBulkDeleteConfirm(true)}>
+              Excluir {selectedIds.size}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Tabela */}
       <div className="historico-table-wrap">
         {loading ? (
@@ -768,6 +910,14 @@ export default function Historico() {
           <table className="historico-table">
             <thead>
               <tr>
+                <th className="col-check">
+                  <input
+                    ref={checkAllRef}
+                    type="checkbox"
+                    className="row-check"
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th className="th-sortable" onClick={() => setOrdemData(o => o === "desc" ? "asc" : "desc")}>
                   Data <span className="sort-icon">{ordemData === "desc" ? "↓" : "↑"}</span>
                 </th>
@@ -784,9 +934,19 @@ export default function Historico() {
                 const cor    = COR_TIPO[l.tipo] || "#888";
                 const prefix = l.tipo === "ENTRADA" ? "+" : "-";
                 const ehParcelado = l.total_parcelas > 1;
+                const isSelected  = selectedIds.has(l.id_lancamento);
 
                 return (
-                  <tr key={l.id_lancamento} className="historico-row">
+                  <tr key={l.id_lancamento}
+                    className={`historico-row${isSelected ? " historico-row--selected" : ""}`}>
+                    <td className="col-check">
+                      <input
+                        type="checkbox"
+                        className="row-check"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(l.id_lancamento)}
+                      />
+                    </td>
                     <td className="col-data">{formatData(l.data_competencia)}</td>
 
                     {/* Desktop */}
@@ -832,7 +992,7 @@ export default function Historico() {
                         <button className="btn-acao btn-acao--edit" title="Editar"
                           onClick={() => setLancamentoEditando(l)}>✎</button>
                         <button className="btn-acao btn-acao--delete" title="Excluir"
-                          onClick={() => setDeletandoId(l.id_lancamento)}>✕</button>
+                          onClick={() => setDeletandoLanc(l)}>✕</button>
                       </div>
                     </td>
                   </tr>

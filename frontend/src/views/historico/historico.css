@@ -93,6 +93,76 @@
 .filter-search::placeholder { color: #444; }
 .filter-search:focus { border-color: #A2FF0155; }
 
+/* ── Barra de seleção em massa ── */
+.sel-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1e1e1e;
+  border: 1px solid #A2FF0133;
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  animation: fadeIn 0.2s ease;
+}
+
+.sel-bar__count {
+  font-size: 13px;
+  color: #A2FF01;
+  font-weight: bold;
+}
+
+.sel-bar__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sel-bar__cancel {
+  background: none;
+  border: 1px solid #333;
+  color: #666;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.sel-bar__cancel:hover { border-color: #555; color: #aaa; }
+
+.sel-bar__delete {
+  background: #ff4d4d15;
+  border: 1px solid #ff4d4d55;
+  color: #ff4d4d;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.sel-bar__delete:hover { background: #ff4d4d25; border-color: #ff4d4d; }
+
+/* ── Checkbox de seleção ── */
+.col-check {
+  width: 40px;
+  padding-left: 14px !important;
+  padding-right: 4px !important;
+}
+
+.row-check {
+  width: 15px;
+  height: 15px;
+  accent-color: #A2FF01;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: block;
+}
+
+.historico-row--selected { background: #A2FF0108; }
+.historico-row--selected:hover { background: #A2FF010f; }
+
 /* ── Tabela ── */
 .historico-table-wrap {
   background: #262626;
@@ -556,6 +626,18 @@
 .modal-btn-save:hover { filter: brightness(1.2); }
 .modal-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.modal-confirm-grupo {
+  padding: 12px 0 0;
+  border-top: 1px solid #2a2a2a;
+}
+.modal-confirm-grupo__msg {
+  font-size: 13px;
+  color: #aaa;
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+.modal-confirm-grupo__msg strong { color: #fff; }
+
 /* =========================================
    GRÁFICO COMPARATIVO
 ========================================= */
@@ -843,6 +925,29 @@
 @media (max-width: 767px) {
   .historico-page {
     padding: 16px 12px 100px;
+  }
+
+  .sel-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .sel-bar__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .sel-bar__cancel,
+  .sel-bar__delete {
+    padding: 10px;
+    text-align: center;
+  }
+
+  .col-check {
+    width: 36px;
+    padding-left: 10px !important;
   }
 
   /* Header empilha */
