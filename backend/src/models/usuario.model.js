@@ -55,6 +55,31 @@ function atualizar(id, dados) {
   );
 }
 
+function atualizarNome(id_user, nome) {
+  return db.query(
+    `UPDATE pessoa SET nome = $1
+     WHERE id_pessoa = (SELECT id_pessoa FROM usuario WHERE id_user = $2)
+     RETURNING nome`,
+    [nome, id_user]
+  );
+}
+
+function atualizarEmail(id_user, email) {
+  return db.query(
+    `UPDATE pessoa SET email = $1
+     WHERE id_pessoa = (SELECT id_pessoa FROM usuario WHERE id_user = $2)
+     RETURNING email`,
+    [email, id_user]
+  );
+}
+
+function atualizarSenha(id_user, senhaHash) {
+  return db.query(
+    `UPDATE usuario SET password = $1 WHERE id_user = $2 RETURNING id_user`,
+    [senhaHash, id_user]
+  );
+}
+
 // Remover
 function remover(id) {
   return db.query(
@@ -69,5 +94,8 @@ module.exports = {
   listar,
   buscarPorId,
   atualizar,
+  atualizarNome,
+  atualizarEmail,
+  atualizarSenha,
   remover
 };

@@ -1,20 +1,14 @@
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useRef, useEffect } from "react";
 import "./navbar.css";
 
 export default function Navbar() {
-  const navigate     = useNavigate();
   const location     = useLocation();
   const nome         = sessionStorage.getItem("nome") || "Usuário";
   const navRef       = useRef(null);
   const indicatorRef = useRef(null);
   const primeiroNome = nome.split(" ")[0];
   const inicial      = nome.charAt(0).toUpperCase();
-
-  const handleLogout = () => {
-    sessionStorage.clear();
-    navigate("/", { replace: true });
-  };
 
   // Dispara evento global — Home e Histórico escutam e abrem seus modais
   const handleFab = () => {
@@ -49,7 +43,6 @@ export default function Navbar() {
       {/* ── Navbar desktop ── */}
       <nav className="navbar">
         <div className="navbar__brand">
-          <img src="/img/LogoHydra.png" alt="Hydra" className="navbar__brand-logo" />
           <span className="navbar__brand-name">
             <strong>HYDRA</strong> Finanças
           </span>
@@ -75,19 +68,11 @@ export default function Navbar() {
               `navbar__user-link${isActive ? " navbar__user-link--active" : ""}`
             }
           >
-            <div className="navbar__avatar">{inicial}</div>
             <span className="navbar__user-name">
               Olá, <strong>{primeiroNome}</strong>
             </span>
+            <div className="navbar__avatar">{inicial}</div>
           </NavLink>
-          <button
-            className="navbar__logout"
-            onClick={handleLogout}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#ff4d4d"; e.currentTarget.style.color = "#ff4d4d"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#444"; e.currentTarget.style.color = "#888"; }}
-          >
-            Sair
-          </button>
         </div>
       </nav>
 

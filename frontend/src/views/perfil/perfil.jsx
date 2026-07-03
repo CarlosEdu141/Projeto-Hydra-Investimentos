@@ -27,6 +27,224 @@ const EMPTY_CARTAO = {
   data_vencimento:  "",
 };
 
+// ── Modal base reutilizável ───────────────────────────────────────────────────
+function ModalConta({ titulo, onClose, onSubmit, submitLabel = "Salvar", submitDisabled, saving, erro, sucesso, children }) {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  return (
+    <div className="perfil-modal-overlay" onClick={onClose}>
+      <div className="perfil-modal-box" onClick={e => e.stopPropagation()}>
+        <div className="perfil-modal-header">
+          <h2 className="perfil-modal-title">{titulo}</h2>
+          <button className="perfil-modal-close" onClick={onClose}>✕</button>
+        </div>
+        {children}
+        {erro   && <div className="perfil-modal-erro">{erro}</div>}
+        {sucesso && <div className="perfil-modal-sucesso">{sucesso}</div>}
+        <div className="perfil-modal-actions">
+          <button className="perfil-modal-btn-cancel" onClick={onClose}>Cancelar</button>
+          <button className="perfil-modal-btn-save" onClick={onSubmit} disabled={saving || !!sucesso || submitDisabled}>
+            {saving ? "Salvando..." : submitLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Requisitos de senha forte ─────────────────────────────────────────────────
+const REGRAS_SENHA = [
+  { chave: "tamanho",  label: "9 a 15 caracteres",                    test: s => s.length >= 9 && s.length <= 15 },
+  { chave: "maiusc",   label: "Letras maiúsculas e minúsculas",       test: s => /[a-z]/.test(s) && /[A-Z]/.test(s) },
+  { chave: "numEsp",   label: "Número ou caractere especial",         test: s => /[0-9]/.test(s) || /[^A-Za-z0-9]/.test(s) },
+];
+const senhaAtendeRegras = (s) => REGRAS_SENHA.every(r => r.test(s));
+
+function RequisitosSenha({ senha }) {
+  return (
+    <div className="perfil-senha-requisitos">
+      <span className="perfil-senha-requisitos__title">Sua nova senha deve ter:</span>
+      <ul className="perfil-senha-requisitos__lista">
+        {REGRAS_SENHA.map(r => {
+          const ok = r.test(senha);
+          return (
+            <li key={r.chave} className={ok ? "ok" : ""}>
+              <span className="perfil-senha-requisitos__check">{ok ? "✓" : "○"}</span>
+              {r.label}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+// ── Modal alterar nome ────────────────────────────────────────────────────────
+function ModalAlterarNome({ nomeAtual, onClose, onSaved }) {
+  const [nome,   setNome]   = useState(nomeAtual);
+  const [saving, setSaving] = useState(false);
+  const [erro,   setErro]   = useState(null);
+  const [sucesso,setSucesso]= useState(null);
+
+  const handleSubmit = async () => {
+    if (!nome.trim()) { setErro("Informe um nome."); return; }
+    setSaving(true); setErro(null);
+    try {
+      const r = await fetch(`${API}/usuarios/me/nome`, {
+        method: "PATCH", headers: authHeaders(),
+        body: JSON.stringify({ nome }),
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        setErro(data.erro || `Erro ${r.status} ao salvar.`); return;
+      }
+      const data = await r.json();
+      sessionStorage.setItem("nome", data.nome);
+      onSaved(data.nome);
+    } catch { setErro("Servidor inacessível. Verifique se o backend está rodando."); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <ModalConta titulo="Alterar nome" onClose={onClose} onSubmit={handleSubmit}
+      saving={saving} erro={erro} sucesso={sucesso}>
+      <div className="perfil-modal-field">
+        <label className="perfil-modal-label">Novo nome</label>
+        <input className="perfil-modal-input" type="text" value={nome}
+          onChange={e => { setNome(e.target.value); setErro(null); }}
+          placeholder="Seu nome completo" autoFocus />
+      </div>
+    </ModalConta>
+  );
+}
+
+// ── Modal alterar e-mail ──────────────────────────────────────────────────────
+function ModalAlterarEmail({ emailAtual, onClose, onSaved }) {
+  const [email,  setEmail]  = useState(emailAtual);
+  const [saving, setSaving] = useState(false);
+  const [erro,   setErro]   = useState(null);
+  const [sucesso,setSucesso]= useState(null);
+
+  const handleSubmit = async () => {
+    if (!email.trim() || !email.includes("@")) { setErro("Informe um e-mail válido."); return; }
+    setSaving(true); setErro(null);
+    try {
+      const r = await fetch(`${API}/usuarios/me/email`, {
+        method: "PATCH", headers: authHeaders(),
+        body: JSON.stringify({ email }),
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        setErro(data.erro || `Erro ${r.status} ao salvar.`); return;
+      }
+      const data = await r.json();
+      sessionStorage.setItem("email", data.email);
+      onSaved(data.email);
+    } catch { setErro("Servidor inacessível. Verifique se o backend está rodando."); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <ModalConta titulo="Alterar e-mail" onClose={onClose} onSubmit={handleSubmit}
+      saving={saving} erro={erro} sucesso={sucesso}>
+      <div className="perfil-modal-field">
+        <label className="perfil-modal-label">Novo e-mail</label>
+        <input className="perfil-modal-input" type="email" value={email}
+          onChange={e => { setEmail(e.target.value); setErro(null); }}
+          placeholder="seu@email.com" autoFocus />
+      </div>
+    </ModalConta>
+  );
+}
+
+// ── Modal alterar senha (2 etapas: confirma atual → define nova) ─────────────
+function ModalAlterarSenha({ onClose }) {
+  const [etapa,      setEtapa]      = useState(1);
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [novaSenha,  setNovaSenha]  = useState("");
+  const [confirmar,  setConfirmar]  = useState("");
+  const [saving,     setSaving]     = useState(false);
+  const [erro,       setErro]       = useState(null);
+  const [sucesso,    setSucesso]    = useState(null);
+
+  const handleVerificar = async () => {
+    if (!senhaAtual) { setErro("Informe a senha atual."); return; }
+    setSaving(true); setErro(null);
+    try {
+      const r = await fetch(`${API}/usuarios/verificar-senha`, {
+        method: "POST", headers: authHeaders(),
+        body: JSON.stringify({ password: senhaAtual }),
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        setErro(data.erro || "Senha atual incorreta."); return;
+      }
+      setEtapa(2);
+    } catch { setErro("Servidor inacessível. Verifique se o backend está rodando."); }
+    finally { setSaving(false); }
+  };
+
+  const handleSalvar = async () => {
+    if (!senhaAtendeRegras(novaSenha)) { setErro("A nova senha não atende aos requisitos abaixo."); return; }
+    if (novaSenha !== confirmar) { setErro("As senhas não coincidem."); return; }
+    setSaving(true); setErro(null);
+    try {
+      const r = await fetch(`${API}/usuarios/me/senha`, {
+        method: "PATCH", headers: authHeaders(),
+        body: JSON.stringify({ senhaAtual, novaSenha }),
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        setErro(data.erro || `Erro ${r.status} ao salvar.`); return;
+      }
+      setSucesso("Senha alterada com sucesso!");
+    } catch { setErro("Servidor inacessível. Verifique se o backend está rodando."); }
+    finally { setSaving(false); }
+  };
+
+  if (etapa === 1) {
+    return (
+      <ModalConta titulo="Confirme sua senha atual" onClose={onClose} onSubmit={handleVerificar}
+        submitLabel="Continuar" saving={saving} erro={erro} sucesso={sucesso}>
+        <div className="perfil-modal-field">
+          <label className="perfil-modal-label">Senha atual</label>
+          <input className="perfil-modal-input" type="password" value={senhaAtual}
+            onChange={e => { setSenhaAtual(e.target.value); setErro(null); }}
+            onKeyDown={e => e.key === "Enter" && handleVerificar()}
+            placeholder="••••••••" autoFocus />
+        </div>
+      </ModalConta>
+    );
+  }
+
+  return (
+    <ModalConta titulo="Criar nova senha" onClose={onClose} onSubmit={handleSalvar}
+      submitLabel="Salvar" submitDisabled={!senhaAtendeRegras(novaSenha) || novaSenha !== confirmar}
+      saving={saving} erro={erro} sucesso={sucesso}>
+      <button type="button" className="perfil-modal-voltar"
+        onClick={() => { setEtapa(1); setErro(null); }}>
+        ‹ Voltar
+      </button>
+      <div className="perfil-modal-field">
+        <label className="perfil-modal-label">Nova senha</label>
+        <input className="perfil-modal-input" type="password" value={novaSenha}
+          onChange={e => { setNovaSenha(e.target.value); setErro(null); }}
+          placeholder="Crie uma senha forte" autoFocus />
+      </div>
+      <RequisitosSenha senha={novaSenha} />
+      <div className="perfil-modal-field">
+        <label className="perfil-modal-label">Confirmar nova senha</label>
+        <input className="perfil-modal-input" type="password" value={confirmar}
+          onChange={e => { setConfirmar(e.target.value); setErro(null); }}
+          placeholder="Repita a nova senha" />
+      </div>
+    </ModalConta>
+  );
+}
+
 function MenuItem({ icon, label, danger, onClick }) {
   return (
     <button
@@ -79,9 +297,13 @@ function BankItem({ bank, connected, onToggle }) {
 
 export default function Perfil() {
   const navigate = useNavigate();
-  const nome    = sessionStorage.getItem("nome")  || "Usuário";
-  const email   = sessionStorage.getItem("email") || "—";
-  const inicial = nome.charAt(0).toUpperCase();
+  const [nomePerfil,  setNomePerfil]  = useState(sessionStorage.getItem("nome")  || "Usuário");
+  const [emailPerfil, setEmailPerfil] = useState(sessionStorage.getItem("email") || "—");
+  const inicial = nomePerfil.charAt(0).toUpperCase();
+
+  const [modalNome,  setModalNome]  = useState(false);
+  const [modalEmail, setModalEmail] = useState(false);
+  const [modalSenha, setModalSenha] = useState(false);
 
   const [bancos, setBancos] = useState({
     nubank: false, itau: false, bradesco: false, caixa: false, bb: false,
@@ -154,14 +376,32 @@ export default function Perfil() {
   return (
     <div className="perfil-page">
 
+      {modalNome && (
+        <ModalAlterarNome
+          nomeAtual={nomePerfil}
+          onClose={() => setModalNome(false)}
+          onSaved={n => { setNomePerfil(n); setModalNome(false); }}
+        />
+      )}
+      {modalEmail && (
+        <ModalAlterarEmail
+          emailAtual={emailPerfil}
+          onClose={() => setModalEmail(false)}
+          onSaved={e => { setEmailPerfil(e); setModalEmail(false); }}
+        />
+      )}
+      {modalSenha && (
+        <ModalAlterarSenha onClose={() => setModalSenha(false)} />
+      )}
+
       {/* Cabeçalho */}
       <div className="perfil-header">
         <div className="perfil-avatar">
           <span className="perfil-avatar__inicial">{inicial}</span>
         </div>
         <div className="perfil-header__info">
-          <span className="perfil-header__nome">{nome}</span>
-          <span className="perfil-header__email">{email}</span>
+          <span className="perfil-header__nome">{nomePerfil}</span>
+          <span className="perfil-header__email">{emailPerfil}</span>
         </div>
       </div>
 
@@ -305,11 +545,11 @@ export default function Perfil() {
           <div className="perfil-section">
             <span className="perfil-section__title">Conta</span>
             <div className="perfil-card">
-              <MenuItem icon="◉" label="Alterar nome" />
+              <MenuItem icon="◉" label="Alterar nome"   onClick={() => setModalNome(true)} />
               <div className="perfil-divider" />
-              <MenuItem icon="◎" label="Alterar e-mail" />
+              <MenuItem icon="◎" label="Alterar e-mail" onClick={() => setModalEmail(true)} />
               <div className="perfil-divider" />
-              <MenuItem icon="⬡" label="Alterar senha" />
+              <MenuItem icon="⬡" label="Alterar senha"  onClick={() => setModalSenha(true)} />
             </div>
           </div>
 

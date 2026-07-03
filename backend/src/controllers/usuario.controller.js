@@ -166,6 +166,70 @@ async function login(req, res) {
   }
 }
 
+async function alterarNome(req, res) {
+  try {
+    const id_user = req.user.id_user;
+    const { nome } = req.body;
+    if (!nome?.trim()) return res.status(400).json({ erro: 'Nome obrigatório' });
+    const { rows } = await usuarioModel.atualizarNome(id_user, nome.trim());
+    res.json({ nome: rows[0].nome });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
+}
+
+async function alterarEmail(req, res) {
+  try {
+    const id_user = req.user.id_user;
+    const { email } = req.body;
+    if (!email?.trim()) return res.status(400).json({ erro: 'Email obrigatório' });
+    const existe = await db.query(
+      `SELECT id_pessoa FROM pessoa
+       WHERE email = $1
+         AND id_pessoa != (SELECT id_pessoa FROM usuario WHERE id_user = $2)`,
+      [email.trim(), id_user]
+    );
+    if (existe.rows.length > 0) return res.status(400).json({ erro: 'Email já cadastrado por outro usuário' });
+    const { rows } = await usuarioModel.atualizarEmail(id_user, email.trim());
+    res.json({ email: rows[0].email });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
+}
+
+function senhaForte(senha) {
+  if (senha.length < 9 || senha.length > 15) return false;
+  if (!/[a-z]/.test(senha)) return false;
+  if (!/[A-Z]/.test(senha)) return false;
+  if (!/[0-9]/.test(senha) && !/[^A-Za-z0-9]/.test(senha)) return false;
+  return true;
+}
+
+async function alterarSenha(req, res) {
+  try {
+    const id_user = req.user.id_user;
+    const { senhaAtual, novaSenha } = req.body;
+    if (!senhaAtual || !novaSenha) return res.status(400).json({ erro: 'Todos os campos são obrigatórios' });
+    if (!senhaForte(novaSenha)) {
+      return res.status(400).json({
+        erro: 'A nova senha deve ter de 9 a 15 caracteres, com letras maiúsculas e minúsculas, e números ou caracteres especiais'
+      });
+    }
+
+    const { rows } = await db.query('SELECT password FROM usuario WHERE id_user = $1', [id_user]);
+    if (!rows.length) return res.status(404).json({ erro: 'Usuário não encontrado' });
+
+    const correta = await bcrypt.compare(senhaAtual, rows[0].password);
+    if (!correta) return res.status(401).json({ erro: 'Senha atual incorreta' });
+
+    const hash = await bcrypt.hash(novaSenha, 10);
+    await usuarioModel.atualizarSenha(id_user, hash);
+    res.json({ mensagem: 'Senha alterada com sucesso' });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
+}
+
 async function verificarSenha(req, res) {
   try {
     const id_user     = req.user.id_user;
@@ -184,4 +248,4 @@ async function verificarSenha(req, res) {
   }
 }
 
-module.exports = { criar, listar, buscarPorId, atualizar, remover, login, verificarSenha };
+module.exports = { criar, listar, buscarPorId, atualizar, remover, login, verificarSenha, alterarNome, alterarEmail, alterarSenha };
